@@ -172,9 +172,9 @@ public class Player implements Runnable {
                 for (int i = 0; i < attempt.length; i++) {
                     
                     keyPressed(attempt[i]); 
-                    try{
-                        Thread.sleep(500);
-                    }catch(InterruptedException ex){}
+                    // try{
+                    //     Thread.sleep(500);
+                    // }catch(InterruptedException ex){}
                 }
                 
                 // try {

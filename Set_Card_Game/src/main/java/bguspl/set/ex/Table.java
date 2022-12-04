@@ -165,7 +165,7 @@ public class Table {
     public void removeAllTokens(){ // Not working !! need to change!
         // for( int i = 0; i < 12;i++)
         //     env.ui.removeTokens(i);
-        env.ui.removeTokens();;
+        env.ui.removeTokens();
     }
 
     /**

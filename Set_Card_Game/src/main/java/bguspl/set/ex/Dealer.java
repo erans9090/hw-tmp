@@ -2,6 +2,7 @@ package bguspl.set.ex;
 
 import bguspl.set.Env;
 
+import java.nio.channels.Pipe;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -83,7 +84,7 @@ public class Dealer implements Runnable {
             placeCardsOnTable();
 
             //set timer:
-            reshuffleTime = 60000;
+            reshuffleTime = 10000;
             env.ui.setCountdown(reshuffleTime, false);
             
             timerLoop();
@@ -150,7 +151,8 @@ public class Dealer implements Runnable {
                         int[] playerSlots = new int[3];
                         for(int j = 0; j<3; j++)
                             playerSlots[j] = playerSet[j][1];
-                        table.removeTokensOfPlayer(pId, playerSlots);
+                        // table.removeTokensOfPlayer(pId, playerSlots);
+                        table.removeAllTokens();
                         System.out.println("board has changed!");
                     }
             
@@ -253,10 +255,21 @@ public class Dealer implements Runnable {
 
         // implement
 
+        System.out.println("reshuffle!");
+
         for (int slot = 0; slot < 12; slot++ ){
             deck.add(table.slotToCard[slot]);
             table.removeCard(slot);
         }
+        synchronized(table.queueLocker){
+            table.setsToCheckQueue.clear();
+            for (int pId = 0 ; pId< players.length ; pId++){
+                synchronized(players[pId].actionsLocker){
+                        players[pId].incomingActions.clear();
+                    }
+                }
+        }
+        table.removeAllTokens();
     }
 
     /**

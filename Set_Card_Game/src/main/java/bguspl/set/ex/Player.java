@@ -61,7 +61,7 @@ public class Player implements Runnable {
     /**
      * a queue of the incoming actions - key pressed translated to slots locations
      */
-    public Queue<Integer> incomingActions;
+    public Queue<Integer[]> incomingActions;
 
      /**
      * Indicate the remaine freeze time after pelenty or point
@@ -90,7 +90,7 @@ public class Player implements Runnable {
         this.human = human;
 
         // implement
-        incomingActions = new LinkedList<Integer>();
+        incomingActions = new LinkedList<Integer[]>();
         frozenTimer = -1000;
         terminate = false;
         actionsLocker = new Object();
@@ -151,8 +151,6 @@ public class Player implements Runnable {
                     attempt[1] = r.nextInt(12) ;
                     attempt[2] = r.nextInt(12) ;
 
-                    System.out.println(Arrays.toString(attempt));
-
                     int[] testSet = new int[3];
                     // if(attempt[0] == null || attempt[1] == null || attempt[2] == null)
                     //     continue;
@@ -164,9 +162,12 @@ public class Player implements Runnable {
                     // if(testSet[0] == null || testSet[1] == null || testSet[2] == null)
                     //     continue;
 
+
                     if(env.util.testSet(testSet))
                         break;
                 }
+
+                // System.out.println(Arrays.toString(attempt));
 
                 for (int i = 0; i < attempt.length; i++) {
                     
@@ -207,12 +208,18 @@ public class Player implements Runnable {
         // any input until the queue is complitly defleted
         synchronized(actionsLocker){
         if(frozenTimer < 0){
-            if (!incomingActions.contains(table.slotToCard[slot]) && incomingActions.size() < 3 && table.slotToCard[slot] != null){
+            boolean added = false;
+            for(Integer[] i : incomingActions)
+                if(i[0].equals(table.slotToCard[slot]))
+                    added = true;
+            if (!added && incomingActions.size() < 3 && table.slotToCard[slot] != null){
                 table.placeToken(id, slot);
-                incomingActions.add(table.slotToCard[slot]);
+                Integer[] toAdd = {table.slotToCard[slot], slot};
+                incomingActions.add(toAdd);
                 if (incomingActions.size() == 3){
                     synchronized(table.queueLocker){
                         table.setsToCheckQueue.add(id);
+                        System.out.println("player " + id + " added to the queue: " + table.setsToCheckQueue.toString());
                     }
                 }
             }
@@ -269,13 +276,13 @@ public class Player implements Runnable {
       *  @post incomingActions.length == 0
       * @return 
       */
-    public int[] getSetFromQueue(){ // may be CRITICAL SECTION
+    public int[][] getSetFromQueue(){ // may be CRITICAL SECTION
 
-        int [] setToCheck = new int[3];
-
+        int[][] setToCheck = new int[3][2];
         for(int i = 0 ; i < setToCheck.length;i++){
-
-            setToCheck[i] = incomingActions.remove();
+            setToCheck[i][0] = incomingActions.peek()[0];
+            setToCheck[i][1] = incomingActions.peek()[1];
+            incomingActions.poll();
         }
 
         return setToCheck;
@@ -284,7 +291,7 @@ public class Player implements Runnable {
 
     public void updateFreezeTime(){
         
-        System.out.println("frozen timer" + frozenTimer);
+        // System.out.println("frozen timer" + frozenTimer);
         if (frozenTimer > 0){
             env.ui.setFreeze(id,frozenTimer);
             frozenTimer -= 1000;

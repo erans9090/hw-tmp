@@ -163,8 +163,17 @@ public class Table {
      * Removes all the token from a grid slot.
      */
     public void removeAllTokens(){ // Not working !! need to change!
-        for( int i = 0; i < 12;i++)
-            env.ui.removeTokens(i);
+        // for( int i = 0; i < 12;i++)
+        //     env.ui.removeTokens(i);
+        env.ui.removeTokens();;
+    }
+
+    /**
+     * Removes all the token from a grid slot.
+     */
+    public void removeTokensOfPlayer(int pId, int[] slots){ // Not working !! need to change!
+        for(int s : slots)
+            removeToken(pId, s);
     }
 
 

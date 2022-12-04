@@ -2,6 +2,7 @@ package bguspl.set.ex;
 
 import bguspl.set.Env;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -139,26 +140,42 @@ public class Dealer implements Runnable {
         synchronized(table.queueLocker){
         for (int pId: table.setsToCheckQueue){
             synchronized(players[pId].actionsLocker){
-            int[] playerSet = players[pId].getSetFromQueue();
-            // System.out.println(Arrays.toString(playerSet));
+            int[][] playerSet = players[pId].getSetFromQueue();
+            int[] playerCards = new int[3];
+            for(int i = 0; i<3; i++)
+                playerCards[i] = playerSet[i][0];
+
+            for(int i = 0 ; i< playerSet.length;i++)
+                    if(table.cardToSlot[playerSet[i][0]] != playerSet[i][0]){
+                        int[] playerSlots = new int[3];
+                        for(int j = 0; j<3; j++)
+                            playerSlots[j] = playerSet[j][1];
+                        table.removeTokensOfPlayer(pId, playerSlots);
+                        System.out.println("board has changed!");
+                    }
             
-            if(env.util.testSet(playerSet)){
+            System.out.println("Dealer checks " + pId + " set: " + Arrays.toString(playerCards));
+            
+            if(env.util.testSet(playerCards)){
                 for(int i = 0 ; i< playerSet.length;i++)
-                    table.removeCard(table.cardToSlot[playerSet[i]]);
+                    table.removeCard(table.cardToSlot[playerCards[i]]);
                 
                 
                 players[pId].point();
                 // players[pId].incomingActions.clear();
                 table.removeAllTokens();
                 table.setsToCheckQueue.clear();
+                System.out.println("player " + pId + " got a point and now the queue is: " + table.setsToCheckQueue.toString());
                 break;
             }
             else{
                 // remove player wrong set tokens
                 players[pId].penalty();
                 for(int i = 0 ; i< playerSet.length;i++)
-                    table.removeToken(pId,table.cardToSlot[playerSet[i]]);
+                    table.removeToken(pId,table.cardToSlot[playerCards[i]]);
                 table.setsToCheckQueue.remove();
+                System.out.println("player " + pId + " got a panelty and now the queue is: " + table.setsToCheckQueue.toString());
+
             }
         }
             

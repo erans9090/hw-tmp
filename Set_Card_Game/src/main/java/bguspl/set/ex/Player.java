@@ -207,23 +207,25 @@ public class Player implements Runnable {
         // when arriving to full capacitiy(3) need to lock the insertion avoiding 
         // any input until the queue is complitly defleted
         synchronized(actionsLocker){
-        if(frozenTimer < 0){
-            boolean added = false;
-            for(Integer[] i : incomingActions)
-                if(i[0].equals(table.slotToCard[slot]))
-                    added = true;
-            if (!added && incomingActions.size() < 3 && table.slotToCard[slot] != null){
-                table.placeToken(id, slot);
-                Integer[] toAdd = {table.slotToCard[slot], slot};
-                incomingActions.add(toAdd);
-                if (incomingActions.size() == 3){
-                    synchronized(table.queueLocker){
-                        table.setsToCheckQueue.add(id);
-                        System.out.println("player " + id + " added to the queue: " + table.setsToCheckQueue.toString());
+            if(frozenTimer < 0){
+                boolean added = false;
+                for(Integer[] i : incomingActions)
+                    if(i[0] != null) // how can it be?
+                        if(i[0].equals(table.slotToCard[slot]))
+                            added = true;
+                
+                if (!added && incomingActions.size() < 3 && table.slotToCard[slot] != null){
+                    table.placeToken(id, slot);
+                    Integer[] toAdd = {table.slotToCard[slot], slot};
+                    incomingActions.add(toAdd);
+                    if (incomingActions.size() == 3){
+                        synchronized(table.queueLocker){
+                            table.setsToCheckQueue.add(id);
+                            System.out.println("player " + id + " added to the queue: " + table.setsToCheckQueue.toString());
+                        }
                     }
                 }
             }
-        }
             // if the incoming actions arrived to full capacity (3) send my id to the ready sets for check queue
             
                 // try{

@@ -4,6 +4,7 @@ import bguspl.set.Env;
 
 import java.nio.channels.Pipe;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -48,7 +49,7 @@ public class Dealer implements Runnable {
     /**
      * Indicate the num of the cards in the table - usefull when the deck is pver and we want to check if there any liggal sets left
      */
-    private int nunOfCardsOnTable;
+    // private int nunOfCardsOnTable;
 
     /**
      * Array of the players threads
@@ -63,7 +64,7 @@ public class Dealer implements Runnable {
 
         // implemnt:
         terminate = false;
-        nunOfCardsOnTable = 12;
+        // nunOfCardsOnTable = 12;
     }
 
     /**
@@ -139,50 +140,61 @@ public class Dealer implements Runnable {
         // CRITICAL SECTION dealer should not be interupted
         //  until a set is found or the queue is empty
         synchronized(table.queueLocker){
-        for (int pId: table.setsToCheckQueue){
-            synchronized(players[pId].actionsLocker){
-            int[][] playerSet = players[pId].getSetFromQueue();
-            int[] playerCards = new int[3];
-            for(int i = 0; i<3; i++)
-                playerCards[i] = playerSet[i][0];
-
-            for(int i = 0 ; i< playerSet.length;i++)
-                    if(table.cardToSlot[playerSet[i][0]] != playerSet[i][0]){
-                        int[] playerSlots = new int[3];
-                        for(int j = 0; j<3; j++)
-                            playerSlots[j] = playerSet[j][1];
-                        // table.removeTokensOfPlayer(pId, playerSlots);
-                        table.removeAllTokens();
-                        System.out.println("board has changed!");
+            while(!table.setsToCheckQueue.isEmpty()){
+                int pId = table.setsToCheckQueue.poll();
+                System.out.println("check player " + pId + " and now the queue is: " + table.setsToCheckQueue);
+                synchronized(players[pId].actionsLocker){
+                    int[][] playerSet = players[pId].getSetFromQueue();
+                    int[] playerCards = new int[3];
+                    int[] playerSlots = new int[3];
+                    for(int i = 0; i<3; i++) {
+                        playerCards[i] = playerSet[i][0];
+                        playerSlots[i] = playerSet[i][1];
                     }
-            
-            System.out.println("Dealer checks " + pId + " set: " + Arrays.toString(playerCards));
-            
-            if(env.util.testSet(playerCards)){
-                for(int i = 0 ; i< playerSet.length;i++)
-                    table.removeCard(table.cardToSlot[playerCards[i]]);
-                
-                
-                players[pId].point();
-                // players[pId].incomingActions.clear();
-                table.removeAllTokens();
-                table.setsToCheckQueue.clear();
-                System.out.println("player " + pId + " got a point and now the queue is: " + table.setsToCheckQueue.toString());
-                break;
-            }
-            else{
-                // remove player wrong set tokens
-                players[pId].penalty();
-                for(int i = 0 ; i< playerSet.length;i++)
-                    table.removeToken(pId,table.cardToSlot[playerCards[i]]);
-                table.setsToCheckQueue.remove();
-                System.out.println("player " + pId + " got a panelty and now the queue is: " + table.setsToCheckQueue.toString());
+                    
+                    //check if the set is still relevant
+                    boolean valid = true;
+                    for(int i = 0 ; i < playerSet.length & valid; i++){
+                        if(table.cardToSlot[playerCards[i]] == null || !table.cardToSlot[playerCards[i]].equals(playerSlots[i])){
+                            table.removeTokensOfPlayer(pId, playerSlots);
+                            System.out.println("board has changed!");
+                            valid = false;
+                        }
+                    }
+                    
+                    if(valid){
+                        System.out.println("Dealer checks " + pId + " set: " + Arrays.toString(playerCards));
+                        
+                        //got a point:
+                        if(env.util.testSet(playerCards)){
+                            for(int i = 0 ; i< playerSet.length;i++)
+                                table.removeCard(table.cardToSlot[playerCards[i]]);
+                            
+                            players[pId].point();
+                            table.removeAllTokens();
+                            
+                            // need to do:
+                            /* 
+                            for(int i = 0; i < players.length; i++)
+                                players[pId].incomingActions.clear();
+                            */
 
+                            table.setsToCheckQueue.clear();
+                            System.out.println("player " + pId + " got a point and now the queue is: " + table.setsToCheckQueue.toString());
+                            break;
+                        } //panelty:
+                        else{
+                            // remove player wrong set tokens
+                            players[pId].penalty();
+                            for(int i = 0 ; i< playerSet.length;i++)
+                                table.removeToken(pId,table.cardToSlot[playerCards[i]]);
+                            System.out.println("player " + pId + " got a panelty and now the queue is: " + table.setsToCheckQueue.toString());
+
+                        }
+                    }
+                }  
             }
         }
-            
-        }
-    }
     }
 
     /**
@@ -191,6 +203,9 @@ public class Dealer implements Runnable {
     private void placeCardsOnTable() {
         //implement
         
+        if(!hasSetInGame())
+            terminate();
+
         //shuffel 12 cards from deck to the board
         for (int slot = 0; slot < 12; slot++ ){
             if (table.slotToCard[slot] == null){
@@ -201,23 +216,30 @@ public class Dealer implements Runnable {
                     deck.remove(cardIndex);
                     table.placeCard(cardId, slot);
                 }
-                else{
-                    //if the deck is empty, don't draw a card,
-                    //insead, check if there is a liggal set on the table, if not - terminate
-                    nunOfCardsOnTable -= 1;
-                    int index = 0;
-                    int[] cardsOnTable = new int[nunOfCardsOnTable];
-                    for (int s = 0; s < 12; s++ ){
-                        if (table.slotToCard[slot] != null){
-                            cardsOnTable[index] = table.slotToCard[slot];
-                            index += 1;
-                        }
-                    }
-                    if(env.util.testSet(cardsOnTable) == false)
-                        terminate();
-                }
             }
         }
+    }
+
+    /**
+     * Check if there is a set in the game
+     */
+    private boolean hasSetInGame() {
+        LinkedList<Integer> cards = new LinkedList<Integer>();
+
+        for(int card : deck) 
+            cards.add(card);
+
+        for (int slot = 0; slot < 12; slot++ )
+            if (table.slotToCard[slot] != null)
+                cards.add(table.slotToCard[slot]);
+        
+        //check if there is a set:
+        List<int[]> temp = env.util.findSets(cards, 1);
+        if(env.util.findSets(cards, 1).size() == 0){
+            System.out.println("No more sets avalible!");
+            return false;
+        }
+        return true;
     }
 
     /**

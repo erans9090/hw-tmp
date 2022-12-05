@@ -150,7 +150,7 @@ public class Player implements Runnable {
                 // implement player key press simulator
                 Random r = new Random();
                 Integer[] attempt = new Integer[3];
-                for (int i = 0; i < 1000; i++) {
+                for (int i = 0; i < 5000; i++) {
                     attempt[0] = r.nextInt(12) ;
                     attempt[1] = r.nextInt(12) ;
                     attempt[2] = r.nextInt(12) ;

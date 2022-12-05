@@ -116,6 +116,7 @@ public class Dealer implements Runnable {
      */
     public void terminate() {
         // implement
+        removeAllCardsFromTable();
         for(int i = 0; i < players.length;i++){
             players[i].terminate();
         }
@@ -130,6 +131,7 @@ public class Dealer implements Runnable {
     private boolean shouldFinish() {
         if(deck == null)
             System.out.println("AHHHHHHHHHHHHHHHHHHHHHHHHHHHHAHHHHHHHHHHHHHHHHHAHHHHHHH");
+        System.out.println(Arrays.toString(deck.toArray()));
         return terminate || env.util.findSets(deck, 1).size() == 0;
     }
 
@@ -157,7 +159,7 @@ public class Dealer implements Runnable {
                     
                     //check if the set is still relevant
                     boolean valid = true;
-                    for(int i = 0 ; i < playerSet.length & valid; i++){
+                    for(int i = 0 ; i < playerSet.length && valid; i++){
                         if(table.cardToSlot[playerCards[i]] == null || !table.cardToSlot[playerCards[i]].equals(playerSlots[i])){
                             table.removeTokensOfPlayer(pId, playerSlots);
                             System.out.println("board has changed!");
@@ -170,30 +172,35 @@ public class Dealer implements Runnable {
                         
                         //got a point:
                         if(env.util.testSet(playerCards)){
-                            for(int i = 0 ; i< playerSet.length;i++)
+                            for(int i = 0 ; i< playerSet.length;i++){
+                                table.removeToken(pId,table.cardToSlot[playerCards[i]]);
                                 table.removeCard(table.cardToSlot[playerCards[i]]);
+                            }
                             
                             players[pId].point();
-                            table.removeAllTokens();
+
+                            // table.removeAllTokens();
                             
                             // if the other player has token on same slot:
-                            for(int i = 0; i < players.length; i++){
-                                if(i != pId){
-                                    synchronized(players[i].actionsLocker){
-                                        boolean hasSameToken = false;
-                                        for(Integer[] action : players[i].incomingActions)
-                                            if(action[1] == playerSlots[0] | action[1] == playerSlots[1] | action[1] == playerSlots[2])
-                                                hasSameToken = true;
+                            // for(int i = 0; i < players.length; i++){
+                            //     if(i != pId){
+                            //         synchronized(players[i].actionsLocker){
+                            //             boolean hasSameToken = false;
+                            //             for(Integer[] action : players[i].incomingActions)
+                            //                 if(action[1] == playerSlots[0] | action[1] == playerSlots[1] | action[1] == playerSlots[2])
+                            //                     hasSameToken = true;
                                         
-                                        if(hasSameToken)
-                                            players[i].incomingActions.clear();
-                                    }
-                                }
-                            }
+                            //             if(hasSameToken)
+                            //                 players[i].incomingActions.clear();
+                            //         }
+                            //     }
+                            // }
 
-                            table.setsToCheckQueue.clear();
+                            // ???
+                            // table.setsToCheckQueue.clear();
                             System.out.println("player " + pId + " got a point and now the queue is: " + table.setsToCheckQueue.toString());
-                            break;
+                            // break;
+                            // ???
                         } //panelty:
                         else{
                             // remove player wrong set tokens
@@ -217,19 +224,20 @@ public class Dealer implements Runnable {
         
         if(!hasSetInGame())
             terminate();
-
-        //shuffel 12 cards from deck to the board
-        Integer [] arr = {0,1,2,3,4,5,6,7,8,9,10,11};
-        List<Integer> lst = Arrays.asList(arr);
-        Collections.shuffle(lst);
-        for (int slot :lst){
-            if (table.slotToCard[slot] == null){
-                if(deck.size() > 0){
-                    Random r = new Random();
-                    int cardIndex = r.nextInt(deck.size());
-                    int cardId = deck.get(cardIndex);
-                    deck.remove(cardIndex);
-                    table.placeCard(cardId, slot);
+        else{
+            //shuffel 12 cards from deck to the board
+            Integer [] arr = {0,1,2,3,4,5,6,7,8,9,10,11};
+            List<Integer> lst = Arrays.asList(arr);
+            Collections.shuffle(lst);
+            for (int slot :lst){
+                if (table.slotToCard[slot] == null){
+                    if(deck.size() > 0){
+                        Random r = new Random();
+                        int cardIndex = r.nextInt(deck.size());
+                        int cardId = deck.get(cardIndex);
+                        deck.remove(cardIndex);
+                        table.placeCard(cardId, slot);
+                    }
                 }
             }
         }
@@ -299,8 +307,10 @@ public class Dealer implements Runnable {
         Collections.shuffle(lst);
 
         for (int slot :lst){
-            deck.add(table.slotToCard[slot]);
-            table.removeCard(slot);
+            if (table.slotToCard[slot] != null){
+                deck.add(table.slotToCard[slot]);
+                table.removeCard(slot);
+            }
         }
         synchronized(table.queueLocker){
             table.setsToCheckQueue.clear();

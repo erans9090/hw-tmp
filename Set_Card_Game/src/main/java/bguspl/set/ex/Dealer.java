@@ -179,28 +179,12 @@ public class Dealer implements Runnable {
                             
                             players[pId].point();
 
-                            // table.removeAllTokens();
-                            
-                            // if the other player has token on same slot:
-                            // for(int i = 0; i < players.length; i++){
-                            //     if(i != pId){
-                            //         synchronized(players[i].actionsLocker){
-                            //             boolean hasSameToken = false;
-                            //             for(Integer[] action : players[i].incomingActions)
-                            //                 if(action[1] == playerSlots[0] | action[1] == playerSlots[1] | action[1] == playerSlots[2])
-                            //                     hasSameToken = true;
-                                        
-                            //             if(hasSameToken)
-                            //                 players[i].incomingActions.clear();
-                            //         }
-                            //     }
-                            // }
+                            //reset timer:
+                            reshuffleTime = 10000;
+                            env.ui.setCountdown(reshuffleTime, false);
 
-                            // ???
-                            // table.setsToCheckQueue.clear();
                             System.out.println("player " + pId + " got a point and now the queue is: " + table.setsToCheckQueue.toString());
-                            // break;
-                            // ???
+                        
                         } //panelty:
                         else{
                             // remove player wrong set tokens

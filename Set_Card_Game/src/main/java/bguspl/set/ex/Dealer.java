@@ -127,6 +127,8 @@ public class Dealer implements Runnable {
      * @return true iff the game should be finished.
      */
     private boolean shouldFinish() {
+        if(deck == null)
+            System.out.println("AHHHHHHHHHHHHHHHHHHHHHHHHHHHHAHHHHHHHHHHHHHHHHHAHHHHHHH");
         return terminate || env.util.findSets(deck, 1).size() == 0;
     }
 
@@ -173,11 +175,20 @@ public class Dealer implements Runnable {
                             players[pId].point();
                             table.removeAllTokens();
                             
-                            // need to do:
-                            /* 
-                            for(int i = 0; i < players.length; i++)
-                                players[pId].incomingActions.clear();
-                            */
+                            // if the other player has token on same slot:
+                            for(int i = 0; i < players.length; i++){
+                                if(i != pId){
+                                    synchronized(players[i].actionsLocker){
+                                        boolean hasSameToken = false;
+                                        for(Integer[] action : players[i].incomingActions)
+                                            if(action[1] == playerSlots[0] | action[1] == playerSlots[1] | action[1] == playerSlots[2])
+                                                hasSameToken = true;
+                                        
+                                        if(hasSameToken)
+                                            players[i].incomingActions.clear();
+                                    }
+                                }
+                            }
 
                             table.setsToCheckQueue.clear();
                             System.out.println("player " + pId + " got a point and now the queue is: " + table.setsToCheckQueue.toString());
@@ -249,7 +260,7 @@ public class Dealer implements Runnable {
         // implement
 
         try {
-            Thread.sleep(1000);
+            Thread.sleep(950);
         } 
         catch(InterruptedException ex){}
     }
@@ -324,13 +335,4 @@ public class Dealer implements Runnable {
         env.ui.announceWinner(winners);
     }
 
-    /**
-     * Clear all player incoming actions
-     * Call table for remove all the token from a grid slot.
-     */
-    public void removeAllTokens(){ // Not working !! need to change!
-        for( int i = 0; i < 12;i++)
-            players[i].incomingActions.clear();
-        table.removeAllTokens();
-    }
 }

@@ -109,6 +109,10 @@ public class Player implements Runnable {
         while (!terminate) {
             // implement main player loop
 
+            // if timer thread
+            // if timer > frozenTimer -> (do nothing - sleep)?
+
+            // update display
         }
         if (!human) try { aiThread.join(); } catch (InterruptedException ignored) {}
         System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
@@ -176,6 +180,10 @@ public class Player implements Runnable {
                     //     Thread.sleep(500);
                     // }catch(InterruptedException ex){}
                 }
+                try{
+                    Thread.sleep(500);
+                }catch(InterruptedException ex){}
+
                 
                 // try {
                 //     synchronized (this) { wait(); }
@@ -207,7 +215,7 @@ public class Player implements Runnable {
         // when arriving to full capacitiy(3) need to lock the insertion avoiding 
         // any input until the queue is complitly defleted
         synchronized(actionsLocker){
-            if(frozenTimer < 0){
+            if(frozenTimer < 0 && !table.setsToCheckQueue.contains(id)){
                 boolean added = false;
                 for(Integer[] i : incomingActions)
                     if(i[0] != null) // how can it be?
@@ -260,6 +268,8 @@ public class Player implements Runnable {
     public void penalty() {
         // implement
 
+        // if timer thread 
+        //  frozenTimer = currentTimer - env.config.penaltyFreezeMillis;
         frozenTimer = env.config.penaltyFreezeMillis;
         env.ui.setFreeze(id,frozenTimer);
 
@@ -278,7 +288,7 @@ public class Player implements Runnable {
       *  @post incomingActions.length == 0
       * @return 
       */
-    public int[][] getSetFromQueue(){ // may be CRITICAL SECTION
+    public int[][] getSetFromQueue(){ // CRITICAL SECTION dealer has the key therefore it is synchronized
 
         int[][] setToCheck = new int[3][2];
         for(int i = 0 ; i < setToCheck.length;i++){

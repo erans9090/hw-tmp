@@ -4,6 +4,7 @@ import bguspl.set.Env;
 
 import java.nio.channels.Pipe;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -218,7 +219,10 @@ public class Dealer implements Runnable {
             terminate();
 
         //shuffel 12 cards from deck to the board
-        for (int slot = 0; slot < 12; slot++ ){
+        Integer [] arr = {0,1,2,3,4,5,6,7,8,9,10,11};
+        List<Integer> lst = Arrays.asList(arr);
+        Collections.shuffle(lst);
+        for (int slot :lst){
             if (table.slotToCard[slot] == null){
                 if(deck.size() > 0){
                     Random r = new Random();
@@ -290,7 +294,11 @@ public class Dealer implements Runnable {
 
         System.out.println("reshuffle!");
 
-        for (int slot = 0; slot < 12; slot++ ){
+        Integer [] arr = {0,1,2,3,4,5,6,7,8,9,10,11};
+        List<Integer> lst = Arrays.asList(arr);
+        Collections.shuffle(lst);
+
+        for (int slot :lst){
             deck.add(table.slotToCard[slot]);
             table.removeCard(slot);
         }

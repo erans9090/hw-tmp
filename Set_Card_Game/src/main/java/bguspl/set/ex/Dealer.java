@@ -129,10 +129,9 @@ public class Dealer implements Runnable {
      * @return true iff the game should be finished.
      */
     private boolean shouldFinish() {
-        if(deck == null)
-            System.out.println("AHHHHHHHHHHHHHHHHHHHHHHHHHHHHAHHHHHHHHHHHHHHHHHAHHHHHHH");
-        System.out.println(Arrays.toString(deck.toArray()));
-        return terminate || env.util.findSets(deck, 1).size() == 0;
+        if(env.util.findSets(deck, 1).size() == 0)
+            terminate();
+        return terminate;
     }
 
     /**

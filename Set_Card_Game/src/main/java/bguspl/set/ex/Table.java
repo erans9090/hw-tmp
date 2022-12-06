@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import java.util.Queue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.LinkedList;
 
@@ -41,7 +42,9 @@ public class Table {
      */
     public Queue<Integer> setsToCheckQueue;
 
-    protected Object queueLocker;
+    // protected Object queueLocker;
+
+    public Semaphore lockDealerQueue;
 
 
     /**
@@ -59,7 +62,8 @@ public class Table {
 
         // implement
         setsToCheckQueue = new LinkedList<>();
-        queueLocker = new Object();
+        // queueLocker = new Object();
+        lockDealerQueue = new Semaphore(1, true);
     }
 
     /**

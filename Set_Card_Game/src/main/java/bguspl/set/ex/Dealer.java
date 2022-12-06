@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.concurrent.Semaphore;
+
 
 // import java.util.Queue;
 // import java.util.Arrays;
@@ -46,6 +48,8 @@ public class Dealer implements Runnable {
      * The time when the dealer needs to reshuffle the deck due to turn timeout.
      */
     private long reshuffleTime = Long.MAX_VALUE;
+
+    private final int loopTime = 5000;
 
     /**
      * Indicate the num of the cards in the table - usefull when the deck is pver and we want to check if there any liggal sets left
@@ -86,14 +90,18 @@ public class Dealer implements Runnable {
             placeCardsOnTable();
 
             //set timer:
-            reshuffleTime = 10000;
+            reshuffleTime = loopTime;
             env.ui.setCountdown(reshuffleTime, false);
             
             timerLoop();
             updateTimerDisplay(false);
             removeAllCardsFromTable();
         }
+        //gui:
+        // removeAllCardsFromTable();
+        env.ui.setCountdown(0, false);
         announceWinners();
+        
         System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
     }
 
@@ -116,9 +124,11 @@ public class Dealer implements Runnable {
      */
     public void terminate() {
         // implement
-        removeAllCardsFromTable();
+
+        //terminate other thredes:
         for(int i = 0; i < players.length;i++){
             players[i].terminate();
+            try { players[i].playerThread.join(); } catch (InterruptedException ignored) {}
         }
         terminate = true;
     }
@@ -143,60 +153,64 @@ public class Dealer implements Runnable {
 
         // CRITICAL SECTION dealer should not be interupted
         //  until a set is found or the queue is empty
-        synchronized(table.queueLocker){
-            while(!table.setsToCheckQueue.isEmpty()){
-                int pId = table.setsToCheckQueue.poll();
-                System.out.println("check player " + pId + " and now the queue is: " + table.setsToCheckQueue);
-                synchronized(players[pId].actionsLocker){
-                    int[][] playerSet = players[pId].getSetFromQueue();
-                    int[] playerCards = new int[3];
-                    int[] playerSlots = new int[3];
-                    for(int i = 0; i<3; i++) {
-                        playerCards[i] = playerSet[i][0];
-                        playerSlots[i] = playerSet[i][1];
+        // synchronized(table.queueLocker){
+        try{
+            table.lockDealerQueue.acquire();
+        } catch(InterruptedException ex) {System.out.println("----didn't catch dealer queue-----");}
+        while(!table.setsToCheckQueue.isEmpty()){
+            int pId = table.setsToCheckQueue.poll();
+            System.out.println("check player " + pId + " and now the queue is: " + table.setsToCheckQueue);
+            synchronized(players[pId].actionsLocker){
+                int[][] playerSet = players[pId].getSetFromQueue();
+                int[] playerCards = new int[3];
+                int[] playerSlots = new int[3];
+                for(int i = 0; i<3; i++) {
+                    playerCards[i] = playerSet[i][0];
+                    playerSlots[i] = playerSet[i][1];
+                }
+                
+                //check if the set is still relevant
+                boolean valid = true;
+                for(int i = 0 ; i < playerSet.length && valid; i++){
+                    if(table.cardToSlot[playerCards[i]] == null || !table.cardToSlot[playerCards[i]].equals(playerSlots[i])){
+                        table.removeTokensOfPlayer(pId, playerSlots);
+                        System.out.println("board has changed!");
+                        valid = false;
                     }
+                }
+                
+                if(valid){
+                    System.out.println("Dealer checks " + pId + " set: " + Arrays.toString(playerCards));
                     
-                    //check if the set is still relevant
-                    boolean valid = true;
-                    for(int i = 0 ; i < playerSet.length && valid; i++){
-                        if(table.cardToSlot[playerCards[i]] == null || !table.cardToSlot[playerCards[i]].equals(playerSlots[i])){
-                            table.removeTokensOfPlayer(pId, playerSlots);
-                            System.out.println("board has changed!");
-                            valid = false;
+                    //got a point:
+                    if(env.util.testSet(playerCards)){
+                        for(int i = 0 ; i< playerSet.length;i++){
+                            table.removeToken(pId,table.cardToSlot[playerCards[i]]);
+                            table.removeCard(table.cardToSlot[playerCards[i]]);
                         }
-                    }
+                        
+                        players[pId].point();
+
+                        //reset timer:
+                        reshuffleTime = loopTime;
+                        env.ui.setCountdown(reshuffleTime, false);
+
+                        System.out.println("player " + pId + " got a point and now the queue is: " + table.setsToCheckQueue.toString());
                     
-                    if(valid){
-                        System.out.println("Dealer checks " + pId + " set: " + Arrays.toString(playerCards));
-                        
-                        //got a point:
-                        if(env.util.testSet(playerCards)){
-                            for(int i = 0 ; i< playerSet.length;i++){
-                                table.removeToken(pId,table.cardToSlot[playerCards[i]]);
-                                table.removeCard(table.cardToSlot[playerCards[i]]);
-                            }
-                            
-                            players[pId].point();
+                    } //panelty:
+                    else{
+                        // remove player wrong set tokens
+                        players[pId].penalty();
+                        for(int i = 0 ; i< playerSet.length;i++)
+                            table.removeToken(pId,table.cardToSlot[playerCards[i]]);
+                        System.out.println("player " + pId + " got a panelty and now the queue is: " + table.setsToCheckQueue.toString());
 
-                            //reset timer:
-                            reshuffleTime = 10000;
-                            env.ui.setCountdown(reshuffleTime, false);
-
-                            System.out.println("player " + pId + " got a point and now the queue is: " + table.setsToCheckQueue.toString());
-                        
-                        } //panelty:
-                        else{
-                            // remove player wrong set tokens
-                            players[pId].penalty();
-                            for(int i = 0 ; i< playerSet.length;i++)
-                                table.removeToken(pId,table.cardToSlot[playerCards[i]]);
-                            System.out.println("player " + pId + " got a panelty and now the queue is: " + table.setsToCheckQueue.toString());
-
-                        }
                     }
-                }  
-            }
+                }
+            }  
         }
+        table.lockDealerQueue.release();
+        // }
     }
 
     /**
@@ -205,25 +219,28 @@ public class Dealer implements Runnable {
     private void placeCardsOnTable() {
         //implement
         
-        if(!hasSetInGame())
-            terminate();
-        else{
-            //shuffel 12 cards from deck to the board
-            Integer [] arr = {0,1,2,3,4,5,6,7,8,9,10,11};
-            List<Integer> lst = Arrays.asList(arr);
-            Collections.shuffle(lst);
-            for (int slot :lst){
-                if (table.slotToCard[slot] == null){
-                    if(deck.size() > 0){
-                        Random r = new Random();
-                        int cardIndex = r.nextInt(deck.size());
-                        int cardId = deck.get(cardIndex);
-                        deck.remove(cardIndex);
-                        table.placeCard(cardId, slot);
-                    }
+        // if(!hasSetInGame())
+        //     terminate();
+        // else{
+
+        //shuffel 12 cards from deck to the board
+        Integer [] arr = {0,1,2,3,4,5,6,7,8,9,10,11};
+        List<Integer> lst = Arrays.asList(arr);
+        Collections.shuffle(lst);
+        for (int slot :lst){
+            if (table.slotToCard[slot] == null){
+                if(deck.size() > 0){
+                    Random r = new Random();
+                    int cardIndex = r.nextInt(deck.size());
+                    int cardId = deck.get(cardIndex);
+                    deck.remove(cardIndex);
+                    table.placeCard(cardId, slot);
                 }
             }
         }
+
+
+        // }
     }
 
     /**
@@ -266,7 +283,8 @@ public class Dealer implements Runnable {
     private void updateTimerDisplay(boolean reset) {
         // implement
         reshuffleTime -= 1000;
-        env.ui.setCountdown(reshuffleTime, false);
+        if(reshuffleTime >= 0)
+            env.ui.setCountdown(reshuffleTime, false);
 
         for (int i = 0; i < players.length; i++) {
             players[i].updateFreezeTime();
@@ -283,6 +301,9 @@ public class Dealer implements Runnable {
 
         // implement
 
+        if(terminate)
+            return;
+
         System.out.println("reshuffle!");
 
         Integer [] arr = {0,1,2,3,4,5,6,7,8,9,10,11};
@@ -295,14 +316,18 @@ public class Dealer implements Runnable {
                 table.removeCard(slot);
             }
         }
-        synchronized(table.queueLocker){
-            table.setsToCheckQueue.clear();
-            for (int pId = 0 ; pId< players.length ; pId++){
-                synchronized(players[pId].actionsLocker){
-                        players[pId].incomingActions.clear();
-                    }
+        // synchronized(table.queueLocker){
+        try{
+            table.lockDealerQueue.acquire();
+        } catch(InterruptedException ex) {System.out.println("----didn't catch dealer queue-----");}
+        table.setsToCheckQueue.clear();
+        for (int pId = 0 ; pId< players.length ; pId++){
+            synchronized(players[pId].actionsLocker){
+                    players[pId].incomingActions.clear();
                 }
-        }
+            }
+        table.lockDealerQueue.release();
+        // }
         table.removeAllTokens();
     }
 

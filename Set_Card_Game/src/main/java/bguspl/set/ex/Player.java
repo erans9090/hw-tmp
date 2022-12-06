@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Arrays;
+import java.util.concurrent.Semaphore;
+
 
 import bguspl.set.Env;
 
@@ -34,7 +36,7 @@ public class Player implements Runnable {
     /**
      * The thread representing the current player.
      */
-    private Thread playerThread;
+    protected Thread playerThread;
 
     /**
      * The thread of the AI (computer) player (an additional thread used to generate key presses).
@@ -227,10 +229,14 @@ public class Player implements Runnable {
                     Integer[] toAdd = {table.slotToCard[slot], slot};
                     incomingActions.add(toAdd);
                     if (incomingActions.size() == 3){
-                        synchronized(table.queueLocker){
-                            table.setsToCheckQueue.add(id);
-                            System.out.println("player " + id + " added to the queue: " + table.setsToCheckQueue.toString());
-                        }
+                        // synchronized(table.queueLocker){
+                        try{
+                            table.lockDealerQueue.acquire();
+                        } catch(InterruptedException ex) {System.out.println("----didn't catch dealer queue-----");}
+                        table.setsToCheckQueue.add(id);
+                        System.out.println("player " + id + " added to the queue: " + table.setsToCheckQueue.toString());
+                        table.lockDealerQueue.release();
+                        // }
                     }
                 }
             }

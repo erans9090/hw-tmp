@@ -49,7 +49,7 @@ public class Dealer implements Runnable {
      */
     private long reshuffleTime = Long.MAX_VALUE;
 
-    private final int loopTime = 5000;
+    private final int loopTime = 20000;
 
     /**
      * Indicate the num of the cards in the table - usefull when the deck is pver and we want to check if there any liggal sets left
@@ -97,11 +97,7 @@ public class Dealer implements Runnable {
             updateTimerDisplay(false);
             removeAllCardsFromTable();
         }
-        //gui:
-        // removeAllCardsFromTable();
-        env.ui.setCountdown(0, false);
-        announceWinners();
-        
+
         System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
     }
 
@@ -134,13 +130,24 @@ public class Dealer implements Runnable {
     }
 
     /**
+     * Called when the game finnished and should terminated.
+     */
+    public void terminateGameFinnished() {
+        removeAllCardsFromTable();
+        env.ui.setCountdown(0, false);
+        announceWinners();
+
+        terminate();
+    }
+
+    /**
      * Check if the game should be terminated or the game end conditions are met.
      *
      * @return true iff the game should be finished.
      */
     private boolean shouldFinish() {
         if(env.util.findSets(deck, 1).size() == 0)
-            terminate();
+            terminateGameFinnished();
         return terminate;
     }
 
@@ -220,7 +227,7 @@ public class Dealer implements Runnable {
         //implement
         
         // if(!hasSetInGame())
-        //     terminate();
+        //     terminateGameFinnished();
         // else{
 
         //shuffel 12 cards from deck to the board

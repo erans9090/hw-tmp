@@ -1,21 +1,13 @@
 package bguspl.set.ex;
 
 import bguspl.set.Env;
-
-import java.nio.channels.Pipe;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.concurrent.Semaphore;
 
-
-// import java.util.Queue;
-// import java.util.Arrays;
-// import java.util.LinkedList;
 
 /**
  * This class manages the dealer's threads and data
@@ -45,16 +37,16 @@ public class Dealer implements Runnable {
     private volatile boolean terminate;
 
     /**
-     * The time when the dealer needs to reshuffle the deck due to turn timeout.
+     * The time remain till the dealer needs to reshuffle the deck due to turn timeout.
      */
     private long reshuffleTime = Long.MAX_VALUE;
 
-    private final int loopTime = 20000;
 
     /**
-     * Indicate the num of the cards in the table - usefull when the deck is pver and we want to check if there any liggal sets left
+     * The time of the loop between dealer needs to reshuffle the deck.
      */
-    // private int nunOfCardsOnTable;
+    private final int loopTime = 20000;
+
 
     /**
      * Array of the players threads
@@ -69,7 +61,6 @@ public class Dealer implements Runnable {
 
         // implemnt:
         terminate = false;
-        // nunOfCardsOnTable = 12;
     }
 
     /**
@@ -119,8 +110,6 @@ public class Dealer implements Runnable {
      * Called when the game should be terminated due to an external event.
      */
     public void terminate() {
-        // implement
-
         //terminate other thredes:
         for(int i = 0; i < players.length;i++){
             players[i].terminate();
@@ -133,7 +122,6 @@ public class Dealer implements Runnable {
      * Called when the game finnished and should terminated.
      */
     public void terminateGameFinnished() {
-        removeAllCardsFromTable();
         env.ui.setCountdown(0, false);
         announceWinners();
 
@@ -155,9 +143,6 @@ public class Dealer implements Runnable {
      * Checks if any cards should be removed from the table and returns them to the deck.
      */
     private void removeCardsFromTable() {
-        
-        // implement
-
         // CRITICAL SECTION dealer should not be interupted
         //  until a set is found or the queue is empty
         // synchronized(table.queueLocker){
@@ -225,10 +210,6 @@ public class Dealer implements Runnable {
      */
     private void placeCardsOnTable() {
         //implement
-        
-        // if(!hasSetInGame())
-        //     terminateGameFinnished();
-        // else{
 
         //shuffel 12 cards from deck to the board
         Integer [] arr = {0,1,2,3,4,5,6,7,8,9,10,11};
@@ -245,31 +226,6 @@ public class Dealer implements Runnable {
                 }
             }
         }
-
-
-        // }
-    }
-
-    /**
-     * Check if there is a set in the game
-     */
-    private boolean hasSetInGame() {
-        LinkedList<Integer> cards = new LinkedList<Integer>();
-
-        for(int card : deck) 
-            cards.add(card);
-
-        for (int slot = 0; slot < 12; slot++ )
-            if (table.slotToCard[slot] != null)
-                cards.add(table.slotToCard[slot]);
-        
-        //check if there is a set:
-        List<int[]> temp = env.util.findSets(cards, 1);
-        if(env.util.findSets(cards, 1).size() == 0){
-            System.out.println("No more sets avalible!");
-            return false;
-        }
-        return true;
     }
 
     /**
@@ -303,9 +259,6 @@ public class Dealer implements Runnable {
      * Returns all the cards from the table to the deck.
      */
     private void removeAllCardsFromTable() {
-
-        // System.out.printf("removeAllCardsFromTable Loop");
-
         // implement
 
         if(terminate)

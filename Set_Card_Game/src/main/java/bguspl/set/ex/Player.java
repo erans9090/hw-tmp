@@ -1,13 +1,8 @@
 package bguspl.set.ex;
 
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 import java.util.Random;
-import java.util.Arrays;
-import java.util.concurrent.Semaphore;
-
-
 import bguspl.set.Env;
 
 /**
@@ -259,8 +254,6 @@ public class Player implements Runnable {
     public void point() {
         // implement
 
-// ??
-        // int ignored = table.countCards(); // this part is just for demonstration in the unit tests
         frozenTimer = env.config.pointFreezeMillis;
         env.ui.setScore(id, ++score);
         env.ui.setFreeze(id,frozenTimer);

@@ -1,15 +1,12 @@
 package bguspl.set.ex;
 
 import bguspl.set.Env;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
 import java.util.Queue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.LinkedList;
 
 /**
@@ -169,8 +166,6 @@ public class Table {
      * Removes all the token from a grid slot.
      */
     public void removeAllTokens(){ // Not working !! need to change!
-        // for( int i = 0; i < 12;i++)
-        //     env.ui.removeTokens(i);
         env.ui.removeTokens();
     }
 
@@ -182,22 +177,4 @@ public class Table {
             removeToken(pId, s);
     }
 
-
-
-
-    //atomic to set functions:
-
-    /**
-     * 
-     */
-    public int[] atomicToSlots(AtomicInteger n){
-        return new int[3];
-    }
-
-    /**
-     * 
-     */
-    public int slotsToAtomic(int[] slots){
-        return 0;
-    }
 }

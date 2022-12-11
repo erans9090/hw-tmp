@@ -104,6 +104,12 @@ public class Player implements Runnable {
         if (!human) createArtificialIntelligenceSmart();
 
         while (!terminate) {
+
+            try {
+                Thread.sleep(200);
+            } 
+            catch(InterruptedException ex){}
+            env.ui.setFreeze(id, frozenTimer+999);
             // implement main player loop
 
             // if timer thread
@@ -163,7 +169,6 @@ public class Player implements Runnable {
                     // if(testSet[0] == null || testSet[1] == null || testSet[2] == null)
                     //     continue;
 
-
                     if(env.util.testSet(testSet))
                         break;
                 }
@@ -171,16 +176,20 @@ public class Player implements Runnable {
                 // System.out.println(Arrays.toString(attempt));
 
                 for (int i = 0; i < attempt.length; i++) {
+
+                    if (attempt[0] == attempt[1] || attempt[0] == attempt[2] || attempt[1] == attempt[2])
+                        break;
+                        
                     
                     keyPressed(attempt[i]); 
                     // try{
                     //     Thread.sleep(500);
                     // }catch(InterruptedException ex){}
+                    try{
+                        Thread.sleep(800);
+                    }catch(InterruptedException ex){}
                 }
-                try{
-                    Thread.sleep(500);
-                }catch(InterruptedException ex){}
-
+                
                 
                 // try {
                 //     synchronized (this) { wait(); }
@@ -259,7 +268,7 @@ public class Player implements Runnable {
 
         frozenTimer = env.config.pointFreezeMillis;
         env.ui.setScore(id, ++score);
-        env.ui.setFreeze(id,frozenTimer);
+        // env.ui.setFreeze(id,frozenTimer);
 
     }
 
@@ -273,7 +282,7 @@ public class Player implements Runnable {
         // if timer thread 
         //  frozenTimer = currentTimer - env.config.penaltyFreezeMillis;
         frozenTimer = env.config.penaltyFreezeMillis;
-        env.ui.setFreeze(id,frozenTimer);
+        // env.ui.setFreeze(id,frozenTimer);
 
 
     }
@@ -305,14 +314,18 @@ public class Player implements Runnable {
 
     public void updateFreezeTime(){
         // System.out.println("frozen timer" + frozenTimer);
-        if (frozenTimer > 0){
-            env.ui.setFreeze(id,frozenTimer+1000);
+        // if (frozenTimer > 0){
+        //     env.ui.setFreeze(id,frozenTimer+1000);
+        if(frozenTimer > 0)
             frozenTimer -= 10;
-        }
-        else if (frozenTimer == 0){
-            env.ui.setFreeze(id,frozenTimer);
-            frozenTimer -= 1000;
-        }
+        else
+            frozenTimer = -1000;
+
+        // }
+        // else if (frozenTimer == 0){
+            // env.ui.setFreeze(id,frozenTimer);
+            // frozenTimer -= 1000;
+        // }
 
     }
 }

@@ -45,7 +45,7 @@ public class Dealer implements Runnable {
     /**
      * The time of the loop between dealer needs to reshuffle the deck.
      */
-    private final int loopTime = 10000;
+    private final long loopTime;
 
     /**
      * should the warn on the timer be turned on
@@ -65,6 +65,7 @@ public class Dealer implements Runnable {
         deck = IntStream.range(0, env.config.deckSize).boxed().collect(Collectors.toList());
 
         // implemnt:
+        loopTime = env.config.turnTimeoutMillis;
         terminate = false;
         warn = false;
     }
@@ -159,6 +160,7 @@ public class Dealer implements Runnable {
         while(!table.setsToCheckQueue.isEmpty()){
             int pId = table.setsToCheckQueue.poll();
             System.out.println("check player " + pId + " and now the queue is: " + table.setsToCheckQueue);
+
             synchronized(players[pId].actionsLocker){
                 int[][] playerSet = players[pId].getSetFromQueue();
                 int[] playerCards = new int[3];
@@ -246,6 +248,10 @@ public class Dealer implements Runnable {
         if(reshuffleTime <= 5000)
             warn = true;
 
+        
+        for (int i = 0; i < players.length; i++) {
+            players[i].updateFreezeTime();
+        }
                 
         reshuffleTime -= 10;
         // env.ui.setCountdown(reshuffleTime, warn);
@@ -270,9 +276,6 @@ public class Dealer implements Runnable {
         // implement
         env.ui.setCountdown(reshuffleTime, warn);
 
-        for (int i = 0; i < players.length; i++) {
-            players[i].updateFreezeTime();
-        }
         
     }
 

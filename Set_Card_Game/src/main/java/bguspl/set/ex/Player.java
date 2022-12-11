@@ -301,7 +301,6 @@ public class Player implements Runnable {
     
 
     public void updateFreezeTime(){
-        
         // System.out.println("frozen timer" + frozenTimer);
         if (frozenTimer > 0){
             env.ui.setFreeze(id,frozenTimer);

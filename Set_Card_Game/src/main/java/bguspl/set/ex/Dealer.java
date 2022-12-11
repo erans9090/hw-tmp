@@ -45,7 +45,7 @@ public class Dealer implements Runnable {
     /**
      * The time of the loop between dealer needs to reshuffle the deck.
      */
-    private final int loopTime = 20000;
+    private final int loopTime = 10000;
 
 
     /**
@@ -156,6 +156,7 @@ public class Dealer implements Runnable {
                 int[][] playerSet = players[pId].getSetFromQueue();
                 int[] playerCards = new int[3];
                 int[] playerSlots = new int[3];
+                // unpack set to cards array and slots array
                 for(int i = 0; i<3; i++) {
                     playerCards[i] = playerSet[i][0];
                     playerSlots[i] = playerSet[i][1];
@@ -233,11 +234,23 @@ public class Dealer implements Runnable {
      */
     private void sleepUntilWokenOrTimeout() {
         // implement
-
-        try {
-            Thread.sleep(950);
-        } 
-        catch(InterruptedException ex){}
+        if( reshuffleTime <= 5000){
+            for (int i = 0; i < 1000; i++) {
+                
+                reshuffleTime -= 1;
+                env.ui.setCountdown(reshuffleTime, true);
+                try {
+                    Thread.sleep(1);
+                } 
+                catch(InterruptedException ex){}
+            }
+        }
+        else{
+            try {
+                Thread.sleep(950);
+            } 
+            catch(InterruptedException ex){}
+        }
     }
 
     /**
@@ -245,8 +258,8 @@ public class Dealer implements Runnable {
      */
     private void updateTimerDisplay(boolean reset) {
         // implement
-        reshuffleTime -= 1000;
-        if(reshuffleTime >= 0)
+        if(reshuffleTime >= 5000)
+            reshuffleTime -= 1000;
             env.ui.setCountdown(reshuffleTime, false);
 
         for (int i = 0; i < players.length; i++) {

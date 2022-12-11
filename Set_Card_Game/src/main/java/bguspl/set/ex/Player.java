@@ -216,8 +216,11 @@ public class Player implements Runnable {
                 boolean added = false;
                 for(Integer[] i : incomingActions)
                     if(i[0] != null) // how can it be?
-                        if(i[0].equals(table.slotToCard[slot]))
+                        if(i[0].equals(table.slotToCard[slot])){
                             added = true;
+                            incomingActions.remove(i);
+                            table.removeToken(id, slot);
+                        }
                 
                 if (!added && incomingActions.size() < 3 && table.slotToCard[slot] != null){
                     table.placeToken(id, slot);
@@ -303,8 +306,8 @@ public class Player implements Runnable {
     public void updateFreezeTime(){
         // System.out.println("frozen timer" + frozenTimer);
         if (frozenTimer > 0){
-            env.ui.setFreeze(id,frozenTimer);
-            frozenTimer -= 1000;
+            env.ui.setFreeze(id,frozenTimer+1000);
+            frozenTimer -= 10;
         }
         else if (frozenTimer == 0){
             env.ui.setFreeze(id,frozenTimer);

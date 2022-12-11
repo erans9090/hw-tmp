@@ -47,6 +47,11 @@ public class Dealer implements Runnable {
      */
     private final int loopTime = 10000;
 
+    /**
+     * should the warn on the timer be turned on
+     */
+    private boolean warn;
+
 
     /**
      * Array of the players threads
@@ -61,6 +66,7 @@ public class Dealer implements Runnable {
 
         // implemnt:
         terminate = false;
+        warn = false;
     }
 
     /**
@@ -82,6 +88,7 @@ public class Dealer implements Runnable {
 
             //set timer:
             reshuffleTime = loopTime;
+            warn = false;
             env.ui.setCountdown(reshuffleTime, false);
             
             timerLoop();
@@ -186,7 +193,8 @@ public class Dealer implements Runnable {
 
                         //reset timer:
                         reshuffleTime = loopTime;
-                        env.ui.setCountdown(reshuffleTime, false);
+                        warn = false;
+                        env.ui.setCountdown(reshuffleTime, warn);
 
                         System.out.println("player " + pId + " got a point and now the queue is: " + table.setsToCheckQueue.toString());
                     
@@ -234,23 +242,25 @@ public class Dealer implements Runnable {
      */
     private void sleepUntilWokenOrTimeout() {
         // implement
-        if( reshuffleTime <= 5000){
-            for (int i = 0; i < 1000; i++) {
+
+        if(reshuffleTime <= 5000)
+            warn = true;
+
                 
-                reshuffleTime -= 1;
-                env.ui.setCountdown(reshuffleTime, true);
-                try {
-                    Thread.sleep(1);
-                } 
-                catch(InterruptedException ex){}
-            }
-        }
-        else{
-            try {
-                Thread.sleep(950);
-            } 
-            catch(InterruptedException ex){}
-        }
+        reshuffleTime -= 10;
+        // env.ui.setCountdown(reshuffleTime, warn);
+        try {
+            Thread.sleep(10);
+        } 
+        catch(InterruptedException ex){}
+            
+        
+        // else{
+        //     try {
+        //         Thread.sleep(950);
+        //     } 
+        //     catch(InterruptedException ex){}
+        // }
     }
 
     /**
@@ -258,9 +268,7 @@ public class Dealer implements Runnable {
      */
     private void updateTimerDisplay(boolean reset) {
         // implement
-        if(reshuffleTime >= 5000)
-            reshuffleTime -= 1000;
-            env.ui.setCountdown(reshuffleTime, false);
+        env.ui.setCountdown(reshuffleTime, warn);
 
         for (int i = 0; i < players.length; i++) {
             players[i].updateFreezeTime();

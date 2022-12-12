@@ -43,6 +43,8 @@ public class Table {
 
     public Semaphore lockDealerQueue;
 
+    protected Object lock;
+
 
     /**
      * Constructor for testing.
@@ -61,6 +63,8 @@ public class Table {
         setsToCheckQueue = new LinkedList<>();
         // queueLocker = new Object();
         lockDealerQueue = new Semaphore(1, true);
+        lock = new Object();
+
     }
 
     /**

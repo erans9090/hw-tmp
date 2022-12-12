@@ -41,7 +41,7 @@ public class Player implements Runnable {
     /**
      * True iff the player is human (not a computer player).
      */
-    private final boolean human;
+    public final boolean human;
 
     /**
      * True iff game should be terminated due to an external event.
@@ -67,6 +67,18 @@ public class Player implements Runnable {
 
     protected Object actionsLocker;
 
+    /**
+     * chnges every iteration to notifiy when display change needs to be done 
+     */
+    // private int countUpdate;
+
+    /**
+     * @true - if the dealer put you in palenty and you have to move a card
+     */
+    private boolean needToMoveCardBecausePanelty;
+
+    
+
     
 
     
@@ -91,6 +103,9 @@ public class Player implements Runnable {
         frozenTimer = -1000;
         terminate = false;
         actionsLocker = new Object();
+        needToMoveCardBecausePanelty = false;
+        // countUpdate =- 1;
+
     }
 
     /**
@@ -100,22 +115,33 @@ public class Player implements Runnable {
     public void run() {
         playerThread = Thread.currentThread();
         System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
+        synchronized(table.lock){
+            if (!human) {
+                createArtificialIntelligenceSmart();
+                try{table.lock.wait();}
+                catch(InterruptedException ex){}
+            }
+            else
+                table.lock.notifyAll();
+        }
 
-        if (!human) createArtificialIntelligenceSmart();
 
         while (!terminate) {
 
-            try {
-                Thread.sleep(200);
-            } 
-            catch(InterruptedException ex){}
-            env.ui.setFreeze(id, frozenTimer+999);
-            // implement main player loop
+            while(frozenTimer >= 0 && !terminate){
 
-            // if timer thread
-            // if timer > frozenTimer -> (do nothing - sleep)?
+                env.ui.setFreeze(id, frozenTimer);
+                frozenTimer -= 1000;
 
-            // update display
+                try{ Thread.sleep(1000); }
+                catch(InterruptedException ex){}
+            }
+            if(terminate)
+                break;
+            synchronized(this){
+                try{ wait(); }
+                catch(InterruptedException ex){}
+            }
         }
         if (!human) try { aiThread.join(); } catch (InterruptedException ignored) {}
         System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
@@ -132,7 +158,7 @@ public class Player implements Runnable {
             while (!terminate) {
                 // implement player key press simulator
                 Random r = new Random();
-                keyPressed(r.nextInt(12)); 
+                keyPressed(r.nextInt((int)(env.config.rows*env.config.columns))); 
                 try{
                     Thread.sleep(500);
                 }catch(InterruptedException ex){}
@@ -149,51 +175,58 @@ public class Player implements Runnable {
         // note: this is a very very smart AI (!)
         aiThread = new Thread(() -> {
             System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
+            synchronized(table.lock){
+                table.lock.notifyAll();
+            }
+
             while (!terminate) {
                 // implement player key press simulator
-                Random r = new Random();
-                Integer[] attempt = new Integer[3];
-                for (int i = 0; i < 5000; i++) {
-                    attempt[0] = r.nextInt(12) ;
-                    attempt[1] = r.nextInt(12) ;
-                    attempt[2] = r.nextInt(12) ;
 
-                    int[] testSet = new int[3];
-                    // if(attempt[0] == null || attempt[1] == null || attempt[2] == null)
-                    //     continue;
-                    if(table.slotToCard[attempt[0]] != null && table.slotToCard[attempt[1]] != null && table.slotToCard[attempt[2]] != null){
-                        testSet[0] = table.slotToCard[attempt[0]];
-                        testSet[1] = table.slotToCard[attempt[1]];
-                        testSet[2] = table.slotToCard[attempt[2]];
+                if(needToMoveCardBecausePanelty){ //got a panelty beacuse a wrong set - so remove all my tokens first
+                    int[][] tokensToMove = getSetFromQueue();
+                    keyPressed(tokensToMove[0][1]);
+                    keyPressed(tokensToMove[1][1]);
+                    keyPressed(tokensToMove[2][1]);
+                }
+                else{ //choose new set
+
+                    Random r = new Random();
+                    Integer[] attempt = new Integer[3];
+                    for (int i = 0; i < 5000; i++) {
+                        attempt[0] = r.nextInt((int)(env.config.rows*env.config.columns)) ;
+                        attempt[1] = r.nextInt((int)(env.config.rows*env.config.columns)) ;
+                        attempt[2] = r.nextInt((int)(env.config.rows*env.config.columns)) ;
+
+                        int[] testSet = new int[3];
+                        // if(attempt[0] == null || attempt[1] == null || attempt[2] == null)
+                        //     continue;
+                        if(table.slotToCard[attempt[0]] != null && table.slotToCard[attempt[1]] != null && table.slotToCard[attempt[2]] != null){
+                            testSet[0] = table.slotToCard[attempt[0]];
+                            testSet[1] = table.slotToCard[attempt[1]];
+                            testSet[2] = table.slotToCard[attempt[2]];
+                        }
+                        // if(testSet[0] == null || testSet[1] == null || testSet[2] == null)
+                        //     continue;
+
+                        if(env.util.testSet(testSet))
+                            break;
                     }
-                    // if(testSet[0] == null || testSet[1] == null || testSet[2] == null)
-                    //     continue;
+                    // System.out.println(Arrays.toString(attempt));
 
-                    if(env.util.testSet(testSet))
-                        break;
-                }
+                    for (int i = 0; i < attempt.length; i++) {
 
-                // System.out.println(Arrays.toString(attempt));
-
-                for (int i = 0; i < attempt.length; i++) {
-
-                    if (attempt[0] == attempt[1] || attempt[0] == attempt[2] || attempt[1] == attempt[2])
-                        break;
+                        if (attempt[0] == attempt[1] || attempt[0] == attempt[2] || attempt[1] == attempt[2])
+                            break;
+                            
                         
-                    
-                    keyPressed(attempt[i]); 
-                    // try{
-                    //     Thread.sleep(500);
-                    // }catch(InterruptedException ex){}
-                    try{
-                        Thread.sleep(800);
-                    }catch(InterruptedException ex){}
+                        keyPressed(attempt[i]); 
+
+                        try{
+                            Thread.sleep(800);
+                        }catch(InterruptedException ex){}
+                    }
                 }
                 
-                
-                // try {
-                //     synchronized (this) { wait(); }
-                // } catch (InterruptedException ignored) {}
             }
             System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
         }, "computer-" + id);
@@ -203,10 +236,10 @@ public class Player implements Runnable {
     /**
      * Called when the game should be terminated due to an external event.
      */
-    public void terminate() {
+    public synchronized void terminate() {
         // implement
-
         terminate = true;
+        notifyAll();
     }
 
     /**
@@ -221,39 +254,42 @@ public class Player implements Runnable {
         // when arriving to full capacitiy(3) need to lock the insertion avoiding 
         // any input until the queue is complitly defleted
         synchronized(actionsLocker){
-            if(frozenTimer < 0 && !table.setsToCheckQueue.contains(id)){
-                boolean added = false;
-                for(Integer[] i : incomingActions)
-                    if(i[0] != null) // how can it be?
-                        if(i[0].equals(table.slotToCard[slot])){
-                            added = true;
-                            incomingActions.remove(i);
-                            table.removeToken(id, slot);
+            if(frozenTimer >= 0)
+                return;
+
+            //first thing - remove token if already in queue
+            Integer[] toRemove = null;
+            for(Integer[] i : incomingActions)
+                    if(i[1] != null) 
+                        //check if he pressed the card location:
+                        if(i[1].equals(slot)){
+                            toRemove = i;
                         }
-                
-                if (!added && incomingActions.size() < 3 && table.slotToCard[slot] != null){
-                    table.placeToken(id, slot);
-                    Integer[] toAdd = {table.slotToCard[slot], slot};
-                    incomingActions.add(toAdd);
-                    if (incomingActions.size() == 3){
-                        // synchronized(table.queueLocker){
-                        try{
-                            table.lockDealerQueue.acquire();
-                        } catch(InterruptedException ex) {System.out.println("----didn't catch dealer queue-----");}
-                        table.setsToCheckQueue.add(id);
-                        System.out.println("player " + id + " added to the queue: " + table.setsToCheckQueue.toString());
-                        table.lockDealerQueue.release();
-                        // }
+            
+            if(toRemove != null){
+                incomingActions.remove(toRemove);
+                table.removeToken(id, toRemove[1]);
+                needToMoveCardBecausePanelty = false;
+            }
+            else{
+                if(!table.setsToCheckQueue.contains(id)){
+                    //if didn't choose this card yet:
+                    if (incomingActions.size() < 3 && table.slotToCard[slot] != null){
+                        table.placeToken(id, slot);
+                        Integer[] toAdd = {table.slotToCard[slot], slot};
+                        incomingActions.add(toAdd);
+                        if (incomingActions.size() == 3){
+                            try{
+                                table.lockDealerQueue.acquire();
+                                table.setsToCheckQueue.add(id);
+                                // System.out.println("player " + id + " added to the queue: " + table.setsToCheckQueue.toString());
+                            } catch(InterruptedException ex) {System.out.println("----didn't catch dealer queue-----");}
+                            table.lockDealerQueue.release();
+                        }
                     }
                 }
             }
-            // if the incoming actions arrived to full capacity (3) send my id to the ready sets for check queue
-            
-                // try{
-                //     Thread.sleep(1000);
-                // }catch(InterruptedException ex){}
-                
-            
+                        
         }
     }
 
@@ -263,12 +299,12 @@ public class Player implements Runnable {
      * @post - the player's score is increased by 1.
      * @post - the player's score is updated in the ui.
      */
-    public void point() {
+    public synchronized void point() {
         // implement
 
         frozenTimer = env.config.pointFreezeMillis;
         env.ui.setScore(id, ++score);
-        // env.ui.setFreeze(id,frozenTimer);
+        notifyAll();
 
     }
 
@@ -276,14 +312,11 @@ public class Player implements Runnable {
     /**
      * Penalize a player and perform other related actions.
      */
-    public void penalty() {
+    public synchronized void panelty() {
         // implement
-
-        // if timer thread 
-        //  frozenTimer = currentTimer - env.config.penaltyFreezeMillis;
+        needToMoveCardBecausePanelty = true;
         frozenTimer = env.config.penaltyFreezeMillis;
-        // env.ui.setFreeze(id,frozenTimer);
-
+        notifyAll();
 
     }
 
@@ -305,28 +338,33 @@ public class Player implements Runnable {
         for(int i = 0 ; i < setToCheck.length;i++){
             setToCheck[i][0] = incomingActions.peek()[0];
             setToCheck[i][1] = incomingActions.peek()[1];
+            incomingActions.add(incomingActions.peek());
             incomingActions.poll();
         }
 
         return setToCheck;
     }
+
+    public void emptyQueue(){ // CRITICAL SECTION dealer has the key therefore it is synchronized
+        while(!incomingActions.isEmpty())
+            incomingActions.poll();
+    }
     
 
-    public void updateFreezeTime(){
-        // System.out.println("frozen timer" + frozenTimer);
-        // if (frozenTimer > 0){
-        //     env.ui.setFreeze(id,frozenTimer+1000);
-        if(frozenTimer > 0)
+    public synchronized void updateFreezeTime(){
+        if(frozenTimer > 0){
+
             frozenTimer -= 10;
-        else
-            frozenTimer = -1000;
-
-        // }
-        // else if (frozenTimer == 0){
-            // env.ui.setFreeze(id,frozenTimer);
-            // frozenTimer -= 1000;
-        // }
-
+            
+            if(frozenTimer == 0)
+                frozenTimer = -1000;
+            
+            if(frozenTimer %1000 == 0)
+                notifyAll();
+        }
     }
+        
+
+    
 }
 

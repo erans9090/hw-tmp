@@ -225,7 +225,7 @@ public class Dealer implements Runnable {
                     boolean valid = true;
                     for(int i = 0 ; i < playerSet.length && valid; i++){
                         if(table.cardToSlot[playerCards[i]] == null || !table.cardToSlot[playerCards[i]].equals(playerSlots[i])){
-                            System.out.println("board has changed!");
+                            // System.out.println("board has changed!");
                             valid = false;
                         }
                     }
@@ -234,6 +234,8 @@ public class Dealer implements Runnable {
                     if(valid){
                         // System.out.println("Dealer checks " + pId + " set: " + Arrays.toString(playerCards));
                         if(env.util.testSet(playerCards)){ //point:
+                            for(int i = 0 ; i< playerSet.length;i++)
+                                table.removeCard(playerSlots[i]);
                             players[pId].point();
                             updateTimerDisplay(true);
                             // System.out.println("player " + pId + " got a point and now the queue is: " + table.setsToCheckQueue.toString());

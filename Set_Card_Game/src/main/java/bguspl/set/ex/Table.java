@@ -169,14 +169,14 @@ public class Table {
     /**
      * Removes all the token from a grid slot.
      */
-    public void removeAllTokens(){ // Not working !! need to change!
+    public void removeAllTokens(){
         env.ui.removeTokens();
     }
 
     /**
      * Removes all the token from a grid slot.
      */
-    public void removeTokensOfPlayer(int pId, int[] slots){ // Not working !! need to change!
+    public void removeTokensOfPlayer(int pId, int[] slots){
         for(int s : slots)
             removeToken(pId, s);
     }

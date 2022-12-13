@@ -206,57 +206,51 @@ public class Dealer implements Runnable {
                 // System.out.println("check player " + pId + " and now the queue is: " + table.setsToCheckQueue);
 
                 synchronized(players[pId].actionsLocker){
+                    // get the player's set (cards and slots):
                     int[][] playerSet = players[pId].getSetFromQueue();
                     int[] playerCards = new int[3];
                     int[] playerSlots = new int[3];
-                    // unpack set to cards array and slots array
-                    for(int i = 0; i<3; i++) {
+                    for(int i = 0; i < playerSet.length; i++) {
                         playerCards[i] = playerSet[i][0];
                         playerSlots[i] = playerSet[i][1];
                     }
+
+                    // save if need to empty queue in the end? :
+                    boolean emptyQueue = true;
                     
-                    //check if the set is still relevant
+
+                    // CHECK SET :
+
+                    // (1) check if the set is still relevant
                     boolean valid = true;
                     for(int i = 0 ; i < playerSet.length && valid; i++){
                         if(table.cardToSlot[playerCards[i]] == null || !table.cardToSlot[playerCards[i]].equals(playerSlots[i])){
-                            table.removeTokensOfPlayer(pId, playerSlots);
                             System.out.println("board has changed!");
                             valid = false;
                         }
                     }
                     
+                    // (2) check if point or panelty
                     if(valid){
                         // System.out.println("Dealer checks " + pId + " set: " + Arrays.toString(playerCards));
-                        
-                        //got a point:
-                        if(env.util.testSet(playerCards)){
-                            for(int i = 0 ; i< playerSet.length;i++){
-                                table.removeToken(pId,table.cardToSlot[playerCards[i]]);
-                                table.removeCard(table.cardToSlot[playerCards[i]]);
-                            }
-                            players[pId].emptyQueue();
+                        if(env.util.testSet(playerCards)){ //point:
                             players[pId].point();
-
-                            //reset timer:
-                            // mode check
                             updateTimerDisplay(true);
-
-                            
                             // System.out.println("player " + pId + " got a point and now the queue is: " + table.setsToCheckQueue.toString());
-                        
-                        } //panelty:
-                        else{
-                            // if(!players[pId].human){
-                            //     for(int i = 0 ; i< playerSet.length;i++)
-                            //         table.removeToken(pId,table.cardToSlot[playerCards[i]]);
-                            //     players[pId].emptyQueue();
-                            // }
+                        } 
+                        else{ //panelty:
                             players[pId].panelty();
+                            emptyQueue = false;
                             // System.out.println("player " + pId + " got a panelty and now the queue is: " + table.setsToCheckQueue.toString());
-
                         }
                     }
-                }  
+
+                    // (3) empty player's queue unless panelty
+                    if(emptyQueue){
+                        table.removeTokensOfPlayer(pId, playerSlots);
+                        players[pId].emptyQueue();
+                    }
+                }
             }
         } catch(InterruptedException ex) {System.out.println("----didn't catch dealer queue-----");}
         table.lockDealerQueue.release();

@@ -77,6 +77,16 @@ public class Player implements Runnable {
      */
     private boolean needToMoveCardBecausePanelty;
 
+      /**
+     * the dealer
+     */
+    private Thread dealerThread;
+
+     /**
+     * the dealer
+     */
+    private Dealer dealer;
+
     
 
     
@@ -99,6 +109,8 @@ public class Player implements Runnable {
         this.human = human;
 
         // implement
+        this.dealer = dealer;
+        // System.out.println("in player " + id + " const : " + dealerThread);
         incomingActions = new LinkedList<Integer[]>();
         frozenTimer = -1000;
         terminate = false;
@@ -282,6 +294,7 @@ public class Player implements Runnable {
                             try{
                                 table.lockDealerQueue.acquire();
                                 table.setsToCheckQueue.add(id);
+                                dealer.getThread().interrupt();
                                 // System.out.println("player " + id + " added to the queue: " + table.setsToCheckQueue.toString());
                             } catch(InterruptedException ex) {System.out.println("----didn't catch dealer queue-----");}
                             table.lockDealerQueue.release();

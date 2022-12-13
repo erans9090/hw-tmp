@@ -74,6 +74,10 @@ public class Dealer implements Runnable {
 
 
 
+    private Thread mThread;
+
+
+
     /**
      * Array of the players threads
      */
@@ -87,6 +91,8 @@ public class Dealer implements Runnable {
         deck = IntStream.range(0, env.config.deckSize).boxed().collect(Collectors.toList());
 
         // implemnt:
+
+        
 
         // set game mode
         // if( env.config.turnTimeoutMillis > 0)
@@ -112,7 +118,11 @@ public class Dealer implements Runnable {
      */
     @Override
     public void run() {
+
+        //intilaize the dealer thread:
+        mThread = Thread.currentThread();
         
+
         // info sys out
         System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
 
@@ -308,10 +318,10 @@ public class Dealer implements Runnable {
         long current = System.currentTimeMillis();
         long partial = timerIntervalMills - (current - startTime) % timerIntervalMills;
 
-        // System.out.println("Before partial: - " + partial);
+        System.out.println("Before partial: - " + partial);
 
         try{Thread.sleep(partial);} 
-        catch(InterruptedException ex){}
+        catch(InterruptedException ex){ System.out.println("Dealer Interapted!");}
 
         // System.out.println("After partial: - " + (timerIntervalMills - (current - startTime)% timerIntervalMills));
 
@@ -433,6 +443,12 @@ public class Dealer implements Runnable {
         }
 
         env.ui.announceWinner(winners);
+    }
+
+
+    public Thread getThread()
+    {
+        return mThread;
     }
 
 }

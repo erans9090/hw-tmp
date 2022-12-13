@@ -216,8 +216,12 @@ public class Dealer implements Runnable {
                 // System.out.println("check player " + pId + " and now the queue is: " + table.setsToCheckQueue);
 
                 synchronized(players[pId].actionsLocker){
+                    //if set to check size is 2 empty it:
+                    if(players[pId].setToCheck.size() < 3)
+                        players[pId].emptyHashSet();
+
                     // get the player's set (cards and slots):
-                    int[][] playerSet = players[pId].getSetFromQueue();
+                    int[][] playerSet = players[pId].getSetFromHahSet();
                     int[] playerCards = new int[3];
                     int[] playerSlots = new int[3];
                     for(int i = 0; i < playerSet.length; i++) {
@@ -226,40 +230,39 @@ public class Dealer implements Runnable {
                     }
 
                     // save if need to empty queue in the end? :
-                    boolean emptyQueue = true;
+                    boolean emptyHashSet = true;
                     
 
                     // CHECK SET :
 
                     // (1) check if the set is still relevant
                     boolean valid = true;
-                    for(int i = 0 ; i < playerSet.length && valid; i++){
-                        if(table.cardToSlot[playerCards[i]] == null || !table.cardToSlot[playerCards[i]].equals(playerSlots[i])){
-                            // System.out.println("board has changed!");
-                            valid = false;
-                        }
-                    }
+                    for(int i = 0 ; i < playerSet.length && valid; i++)
+                        valid = table.isRelevant(playerCards[i], playerSlots[i]);
                     
                     // (2) check if point or panelty
                     if(valid){
-                        // System.out.println("Dealer checks " + pId + " set: " + Arrays.toString(playerCards));
+                        System.out.println("Dealer checks " + pId + " set: " + Arrays.toString(playerCards));
                         if(env.util.testSet(playerCards)){ //point:
+                            // remove all the other players 
+
+                            //
                             table.removeCards(playerSlots);
                             players[pId].point();
                             updateTimerDisplay(true);
-                            // System.out.println("player " + pId + " got a point and now the queue is: " + table.setsToCheckQueue.toString());
+                            System.out.println("player " + pId + " got a point and now the queue is: " + table.setsToCheckQueue.toString());
                         } 
                         else{ //panelty:
                             players[pId].panelty();
-                            emptyQueue = false;
+                            emptyHashSet = false;
                             // System.out.println("player " + pId + " got a panelty and now the queue is: " + table.setsToCheckQueue.toString());
                         }
                     }
 
                     // (3) empty player's queue unless panelty
-                    if(emptyQueue){
+                    if(emptyHashSet){
                         table.removeTokensOfPlayer(pId, playerSlots);
-                        players[pId].emptyQueue();
+                        players[pId].emptyHashSet();
                     }
                 }
             }
@@ -322,7 +325,7 @@ public class Dealer implements Runnable {
         long partial = current - startTime;
         long sleepTime = timerIntervalMills - partial % timerIntervalMills;
 
-        System.out.println("Before sleepTime: - " + sleepTime);
+        // System.out.println("Before sleepTime: - " + sleepTime);
 
         try{Thread.sleep(sleepTime);} 
         catch(InterruptedException ex){ System.out.println("Dealer Interapted!");}
@@ -416,6 +419,8 @@ public class Dealer implements Runnable {
             for (int pId = 0 ; pId< players.length ; pId++){
                 synchronized(players[pId].actionsLocker){
                         players[pId].incomingActions.clear();
+                        players[pId].setToCheck.clear();
+
                     }
                 }
         } catch(InterruptedException ex) {System.out.println("----didn't catch dealer queue-----");}

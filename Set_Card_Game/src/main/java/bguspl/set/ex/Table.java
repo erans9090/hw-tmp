@@ -189,4 +189,9 @@ public class Table {
             removeToken(pId, s);
     }
 
+
+    public boolean isRelevant(int card, int slot){
+        return (cardToSlot[card] != null && cardToSlot[card].equals(slot));
+    }
+
 }

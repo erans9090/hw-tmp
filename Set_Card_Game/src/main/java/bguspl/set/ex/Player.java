@@ -137,8 +137,10 @@ public class Player implements Runnable {
                 table.lock.notifyAll();
         }
 
-
+        //--- main loop player ---//
         while (!terminate) {
+
+
 
             while(frozenTimer >= 0 && !terminate){
 
@@ -148,6 +150,18 @@ public class Player implements Runnable {
                 try{ Thread.sleep(1000); }
                 catch(InterruptedException ex){}
             }
+
+            // while(!incomingActions.isEmpty()){
+            //     int slot = incomingActions.poll()[1];
+
+                
+
+            //     table.placeToken(id, slot);
+
+            //     // if already has token
+            //     table.removeToken(id, slot);
+            // }
+
             if(terminate)
                 break;
             synchronized(this){
@@ -190,6 +204,10 @@ public class Player implements Runnable {
             synchronized(table.lock){
                 table.lock.notifyAll();
             }
+
+            try{Thread.sleep(4000);} 
+            catch(InterruptedException ex){ System.out.println("player: " + id+ " ai Interapted!");}
+            System.out.println("player: " + id+ " ai started!");
 
             while (!terminate) {
                 // implement player key press simulator
@@ -273,7 +291,7 @@ public class Player implements Runnable {
             Integer[] toRemove = null;
             for(Integer[] i : incomingActions)
                     if(i[1] != null) 
-                        //check if he pressed the card location:
+                        //check if he pressed the card location already:
                         if(i[1].equals(slot)){
                             toRemove = i;
                         }

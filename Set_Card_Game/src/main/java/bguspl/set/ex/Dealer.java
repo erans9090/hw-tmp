@@ -244,8 +244,7 @@ public class Dealer implements Runnable {
                     if(valid){
                         // System.out.println("Dealer checks " + pId + " set: " + Arrays.toString(playerCards));
                         if(env.util.testSet(playerCards)){ //point:
-                            for(int i = 0 ; i< playerSet.length;i++)
-                                table.removeCard(playerSlots[i]);
+                            table.removeCards(playerSlots);
                             players[pId].point();
                             updateTimerDisplay(true);
                             // System.out.println("player " + pId + " got a point and now the queue is: " + table.setsToCheckQueue.toString());
@@ -290,6 +289,10 @@ public class Dealer implements Runnable {
                     int cardId = deck.get(cardIndex);
                     deck.remove(cardIndex);
                     table.placeCard(cardId, slot);
+
+                    try{Thread.sleep(env.config.tableDelayMillis);} 
+                    catch(InterruptedException ex){ System.out.println("Dealer Interapted!");}
+
                 }
             }
         }
@@ -316,11 +319,12 @@ public class Dealer implements Runnable {
             timerIntervalMills = 1000;
         
         long current = System.currentTimeMillis();
-        long partial = timerIntervalMills - (current - startTime) % timerIntervalMills;
+        long partial = current - startTime;
+        long sleepTime = timerIntervalMills - partial % timerIntervalMills;
 
-        System.out.println("Before partial: - " + partial);
+        System.out.println("Before sleepTime: - " + sleepTime);
 
-        try{Thread.sleep(partial);} 
+        try{Thread.sleep(sleepTime);} 
         catch(InterruptedException ex){ System.out.println("Dealer Interapted!");}
 
         // System.out.println("After partial: - " + (timerIntervalMills - (current - startTime)% timerIntervalMills));
@@ -362,6 +366,11 @@ public class Dealer implements Runnable {
         //     timerIntervalMills = 10;
 
         long partial = current - startTime;
+
+        // if(!warn)
+        //     env.ui.setCountdown(env.config.turnTimeoutMillis - partial + 999, warn);
+        // else
+        //     env.ui.setCountdown(env.config.turnTimeoutMillis - partial + 10, warn);
 
         if(!warn)
             env.ui.setCountdown(env.config.turnTimeoutMillis - partial + 999, warn);

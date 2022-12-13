@@ -144,6 +144,14 @@ public class Table {
     }
 
     /**
+     * Removes all cards in slots[]
+     */
+    public void removeCards(int[] slots){
+        for(int s : slots)
+            removeCard(s);
+    }
+
+    /**
      * Places a player token on a grid slot.
      * @param player - the player the token belongs to.
      * @param slot   - the slot on which to place the token.

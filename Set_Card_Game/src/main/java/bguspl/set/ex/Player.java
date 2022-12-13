@@ -2,6 +2,7 @@ package bguspl.set.ex;
 
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
@@ -140,7 +141,7 @@ public class Player implements Runnable {
         // deals threads order 
         synchronized(table.lock){
             if (!human) {
-                createArtificialIntelligenceSmart();
+                createArtificialIntelligenceImproved();
                 try{table.lock.wait();}
                 catch(InterruptedException ex){}
             }
@@ -172,11 +173,17 @@ public class Player implements Runnable {
             try{ Thread.sleep(1000); }
             catch(InterruptedException ex){}
         }
+
+        if(!human)synchronized(aiThread){aiThread.notifyAll();};
     }
 
     private void manageInput(){
 
+        // System.out.println("manage input");
+        boolean needToAdd = false;
         synchronized(actionsLocker){
+            System.out.println("player " + id + " got actionslocker key");
+
             while(!incomingActions.isEmpty()){
                 
 
@@ -198,30 +205,35 @@ public class Player implements Runnable {
  
                     setToCheck.add(card_slot);
                     table.placeToken(id,card_slot[1]);
+                    if(setToCheck.size() == 3){
+                        needToAdd = true;       
+                    }
                     System.out.println("player: "+ id + " add card_slot: " + Arrays.toString(card_slot) + " and now set is: " + printSetToCheck());
                 }
                 else{
                     System.out.println("player: "+ id + " denayed card_slot: " + Arrays.toString(card_slot) + " and now set is: " + printSetToCheck());
 
                 }
-                
-                if(setToCheck.size() == 3){
-                    try{
-                        table.lockDealerQueue.acquire();
-                        
-                        table.setsToCheckQueue.add(id);
-                        System.out.println("set added!!");
 
-                        needToRemoveToken = true;
-                        dealer.getThread().interrupt();
-                    }
-                    catch(InterruptedException ex) {System.out.println("----didn't catch dealer queue-----");}
-                    table.lockDealerQueue.release();
-                }
             }
         }
-        
+
+        if(needToAdd){
+            try{
+                table.lockDealerQueue.acquire();
+                
+                table.setsToCheckQueue.add(id);
+                System.out.println("set added!!");
+
+                needToRemoveToken = true;
+                dealer.getThread().interrupt();
+            }
+            catch(InterruptedException ex) {System.out.println("----didn't catch dealer queue-----");}
+            table.lockDealerQueue.release();
+        }
     }
+        
+    
 
     private synchronized void waitUntilWoken(){
         try{ wait(); }
@@ -251,6 +263,60 @@ public class Player implements Runnable {
         }, "computer-" + id);
         aiThread.start();
     }
+
+    private void createArtificialIntelligenceImproved() {
+
+        aiThread = new Thread(() -> {
+            System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
+            synchronized(table.lock){
+                table.lock.notifyAll();
+            }
+            while (!terminate) {
+                
+                try{Thread.sleep(1000);}
+                catch(InterruptedException ignored){}
+
+                List<Integer> cards = new LinkedList<>();
+                for (Integer card : table.cardToSlot) {
+                    if(card != null)
+                        cards.add(card);
+                }
+                List<int[]> sets = env.util.findSets(cards,1);
+
+                Random r = new Random();
+
+                int chance = r.nextInt(3);
+
+                if (chance == 0 && sets.size() > 0){
+                    for (int slot : sets.get(0)) {
+                        try{Thread.sleep(1000);}
+                        catch(InterruptedException ek){}
+                        keyPressed(slot);
+                    }
+                }
+                else{
+                    for (int i = 0; i < 5; i++) {  
+                        try{Thread.sleep(1000);}
+                        catch(InterruptedException ek){}
+                        keyPressed(r.nextInt(11));
+                    }
+
+                }
+
+                synchronized(actionsLocker){
+                    setToCheck.clear();
+                    needToRemoveToken = false;
+                }
+
+
+
+            }
+            System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
+        }, "computer-" + id);
+        aiThread.start();
+    }
+    
+
 
     private void createArtificialIntelligenceSmart() {
         // note: this is a very very smart AI (!)
@@ -337,48 +403,46 @@ public class Player implements Runnable {
         // implement
 
         
+        if(frozenTimer > 0 || table.slotToCard[slot] == null){
+            System.out.println("key presed: but frozen or slot is empty");
+            return;}
 
         // when arriving to full capacitiy(3) need to lock the insertion avoiding 
         // any input until the queue is complitly defleted
         synchronized(actionsLocker){
 
             System.out.println("key presed: player "+ id + " got slot " + slot);
-
-            if(frozenTimer > 0){
-                System.out.println("key presed: but frozen");
-                return;}
-
+            System.out.println("the queue now is: " + printSetToCheck());
 
             // keypressed
 
-            //
             if (needToRemoveToken)
             {
                 // System.out.println("key presed: need to remove");
                 
                 if(isSlotInSetToCheck(slot))
                 {
-                    // System.out.println("key presed: slot to remove -- secceed");
-
+                    System.out.println("key presed: slot to remove -- secceed");
                     Integer[] tmp = {table.slotToCard[slot],slot};
                     incomingActions.add(tmp);
-                    
+                    notifyAll();
+
                 }
+                else
+                    System.out.println("key pressed: not added to queue becouse need to remove");
 
             }
             else if(incomingActions.size() < 3) {
                 // System.out.println("key presed: incoming actions < 3");
 
                 Integer[] tmp = {table.slotToCard[slot],slot};
+                System.out.println("key presed: slot to add -- secceed");
                 incomingActions.add(tmp);
+                notifyAll();
             }
                 
             // System.out.println("current thread:" + Thread.currentThread());
-            // System.out.println("player thread:" + playerThread);
-
-            notifyAll();
-            return;
-                 
+            // System.out.println("player thread:" + playerThread);                 
 
 
             // //first thing - remove token if already in queue
@@ -430,6 +494,8 @@ public class Player implements Runnable {
         frozenTimer = env.config.pointFreezeMillis;
         env.ui.setScore(id, ++score);
         needToRemoveToken = false;
+        if(!human)try{synchronized(aiThread){aiThread.wait();}}
+        catch(InterruptedException ignored){}
         notifyAll();
 
     }
@@ -441,8 +507,11 @@ public class Player implements Runnable {
     public synchronized void panelty() {
         // implement
         // needToRemoveToken = true;
+        System.out.println("--------------Panelty----------------");
         needToMoveCardBecausePanelty = true;
         frozenTimer = env.config.penaltyFreezeMillis;
+        if(!human)try{synchronized(aiThread){aiThread.wait();}}
+                    catch(InterruptedException ignored){}
         notifyAll();
 
     }
@@ -474,6 +543,7 @@ public class Player implements Runnable {
     public void emptyHashSet(){ // CRITICAL SECTION dealer has the key therefore it is synchronized
         // incomingActions.clear();
         setToCheck.clear();
+        needToRemoveToken = false;
     }
     
 
@@ -507,10 +577,10 @@ public class Player implements Runnable {
         return ans.substring(0, ans.length()) + "]";
     }
 
-    private boolean removeToken(int card, int slot)
+    protected boolean removeToken(int card, int slot)
     {
         for (Integer[] set : setToCheck) {
-            if (card == set[0] && slot == set[1]){
+            if (slot == set[1]){
                 setToCheck.remove(set);
                 table.removeToken(id,slot);
                 needToRemoveToken = false;

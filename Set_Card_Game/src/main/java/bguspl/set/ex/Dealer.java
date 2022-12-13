@@ -1,8 +1,11 @@
 package bguspl.set.ex;
 
 import bguspl.set.Env;
+
+import java.nio.channels.Pipe;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -211,11 +214,15 @@ public class Dealer implements Runnable {
         //  until a set is found or the queue is empty
         try{
             table.lockDealerQueue.acquire();
+            boolean hadSet = false;
             while(!table.setsToCheckQueue.isEmpty()){
+
                 int pId = table.setsToCheckQueue.poll();
                 // System.out.println("check player " + pId + " and now the queue is: " + table.setsToCheckQueue);
 
                 synchronized(players[pId].actionsLocker){
+                    if (players[pId].setToCheck.isEmpty())
+                        break;
                     //if set to check size is 2 empty it:
                     if(players[pId].setToCheck.size() < 3)
                         players[pId].emptyHashSet();
@@ -224,6 +231,7 @@ public class Dealer implements Runnable {
                     int[][] playerSet = players[pId].getSetFromHahSet();
                     int[] playerCards = new int[3];
                     int[] playerSlots = new int[3];
+
                     for(int i = 0; i < playerSet.length; i++) {
                         playerCards[i] = playerSet[i][0];
                         playerSlots[i] = playerSet[i][1];
@@ -237,8 +245,11 @@ public class Dealer implements Runnable {
 
                     // (1) check if the set is still relevant
                     boolean valid = true;
-                    for(int i = 0 ; i < playerSet.length && valid; i++)
+                    for(int i = 0 ; i < playerSet.length && valid; i++){
                         valid = table.isRelevant(playerCards[i], playerSlots[i]);
+
+
+                    }
                     
                     // (2) check if point or panelty
                     if(valid){
@@ -247,9 +258,10 @@ public class Dealer implements Runnable {
                             // remove all the other players 
 
                             //
-                            table.removeCards(playerSlots);
+                            hadSet = true;
                             players[pId].point();
                             updateTimerDisplay(true);
+                            table.removeCards(playerSlots);
                             System.out.println("player " + pId + " got a point and now the queue is: " + table.setsToCheckQueue.toString());
                         } 
                         else{ //panelty:
@@ -266,6 +278,28 @@ public class Dealer implements Runnable {
                     }
                 }
             }
+
+        // remove tokens from empty slots
+        if (hadSet){
+        for (int pId = 0; pId < players.length; pId++) {
+            synchronized(players[pId].actionsLocker){
+
+                List<Integer> slotsToRemove = new LinkedList<Integer>();
+
+                for(Integer[] card_slot :players[pId].setToCheck){
+                    if(table.slotToCard[card_slot[1]] == null)
+                        slotsToRemove.add(card_slot[1]);
+                }
+
+                for(Integer slot:slotsToRemove){
+                    players[pId].removeToken(pId,slot);
+                }
+
+
+                System.out.println("removing pId: " + pId  + " slot: ");
+                }
+            }
+        }
         } catch(InterruptedException ex) {System.out.println("----didn't catch dealer queue-----");}
         table.lockDealerQueue.release();
     }
@@ -418,8 +452,10 @@ public class Dealer implements Runnable {
             table.setsToCheckQueue.clear();
             for (int pId = 0 ; pId< players.length ; pId++){
                 synchronized(players[pId].actionsLocker){
-                        players[pId].incomingActions.clear();
                         players[pId].setToCheck.clear();
+                        players[pId].needToRemoveToken = false;
+                        System.out.println("player " + pId+ "set to check cleared the set now is: ");
+                        players[pId].printSetToCheck();
 
                     }
                 }

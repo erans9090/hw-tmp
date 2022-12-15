@@ -19,7 +19,7 @@ public class Table {
     /**
      * The game environment object.
      */
-    private final Env env;
+    protected final Env env;
 
     /**
      * Mapping between a slot and the card placed in it (null if none).
@@ -61,9 +61,7 @@ public class Table {
         this.slotToCard = slotToCard;
         this.cardToSlot = cardToSlot;
 
-        // implement
         setsToCheckQueue = new LinkedList<>();
-        // queueLocker = new Object();
         lockDealerQueue = new Semaphore(1, true);
         lock = new Object();
         tableIsReady = false;
@@ -121,11 +119,7 @@ public class Table {
         cardToSlot[card] = slot;
         slotToCard[slot] = card;
 
-        //implement
-
         env.ui.placeCard(card, slot);
-
-
     }
 
     /**
@@ -192,7 +186,9 @@ public class Table {
             removeToken(pId, s);
     }
 
-
+    /**
+     * Checks if the card as the player picked it is still relavant and hasn't changed cause of the dealer actions
+     */
     public boolean isRelevant(Integer card, int slot){
         if (card == null)
             return false;

@@ -45,6 +45,8 @@ public class Table {
 
     protected Object lock;
 
+    protected volatile boolean tableIsReady;
+
 
     /**
      * Constructor for testing.
@@ -64,6 +66,7 @@ public class Table {
         // queueLocker = new Object();
         lockDealerQueue = new Semaphore(1, true);
         lock = new Object();
+        tableIsReady = false;
 
     }
 
@@ -190,8 +193,10 @@ public class Table {
     }
 
 
-    public boolean isRelevant(int card, int slot){
-        return (cardToSlot[card] != null && cardToSlot[card].equals(slot));
+    public boolean isRelevant(Integer card, int slot){
+        if (card == null)
+            return false;
+        return (slotToCard[slot] != null && cardToSlot[card] != null && cardToSlot[card].equals(slot));
     }
 
 }

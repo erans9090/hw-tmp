@@ -180,6 +180,8 @@ public class Player implements Runnable {
             aiThread.interrupt();
             while(aiThread.isAlive()){
                 try {
+                    System.out.println("# ai " + id + " is -> " + aiThread.isAlive() + " trying to close it loop");
+
                     aiThread.join(); }
                 catch (InterruptedException ignored) {
                 System.out.println("# ai "+ id +" close interupted");
@@ -335,7 +337,7 @@ public class Player implements Runnable {
                 // while(waitingToCheck)
                 // {}
 
-                while(!table.tableIsReady){
+                while(!table.tableIsReady && !terminate){ //change hear!!!
                         try{ Thread.sleep((10));}
                         catch(InterruptedException ex){}
                     }

@@ -151,9 +151,10 @@ public class Dealer implements Runnable {
             System.out.println("# try to close player " + i);
             players[i].terminate();
             // boolean Closed = false;
+            players[i].playerThread.interrupt();
             while(players[i].playerThread.isAlive()){
+                System.out.println("# player " + i + " is -> " +players[i].playerThread.isAlive() + " trying to close it loop");
                 try { 
-                    players[i].playerThread.interrupt();
                     players[i].playerThread.join();
                     // Closed = true; 
                 } 

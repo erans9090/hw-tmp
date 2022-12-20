@@ -14,15 +14,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Queue;
 import java.util.logging.Logger;
 
-// import org.junit.Assert;
-// import org.junit.jupiter.params.ParameterizedTest;
-// import org.junit.jupiter.params.provider.CsvSource;
-
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+
 
 @ExtendWith(MockitoExtension.class)
 class PlayerTest {
@@ -79,7 +75,7 @@ class PlayerTest {
     }
 
     @Test
-    void panelty() {
+    void paneltyTest() {
 
         // calculate the expected freeze time
         long expectedFrozenTimer = player.env.config.penaltyFreezeMillis;
@@ -92,27 +88,21 @@ class PlayerTest {
     }
 
     @Test
-    void keyPressed(int slot){
+    void emptyHashSetTest(){
         
-        // force table.slotToCard[1] to return 3
-        // when(slot).thenReturn(1);
-        // when(table.slotToCard[1]).thenReturn(3);
+        // insert dummy vlues into the player's hash set and the incoming actions
+        Integer[] dummy = {0,5};
+        player.setToCheck.add(dummy);
+        player.incomingActions.add(dummy);
 
-        // slot added to incoming actions only if its legal to add it
-
-        slot = 1;
-
-        Queue<Integer[]> expectedincomingActions = player.incomingActions;
-        Integer[] tmp = {table.slotToCard[slot],slot};
-        expectedincomingActions.add(tmp);
+        //test that they are not empty:
+        assertEquals(false, player.setToCheck.isEmpty() | player.incomingActions.isEmpty());
 
         // call the method we are testing
-        player.keyPressed(slot);
+        player.emptyHashSet();
 
-        // check that the frozenTimer was decreased correctly
-        assertEquals(expectedincomingActions, player.incomingActions);
+        // check that the freeze time was increased correctly
+        assertEquals(true, player.setToCheck.isEmpty() & player.incomingActions.isEmpty());
 
-        // check that ui.setScore was called with the player's id and the correct score
-        // verify(ui).setFreeze(eq(player.id), eq(expectedincomingActions));
     }
 }

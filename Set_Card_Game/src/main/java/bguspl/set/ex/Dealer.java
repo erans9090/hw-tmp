@@ -24,7 +24,7 @@ public class Dealer implements Runnable {
     /**
      * The game environment object.
      */
-    private final Env env;
+    protected final Env env;
 
     /**
      * Game entities.
@@ -99,7 +99,7 @@ public class Dealer implements Runnable {
      */
     @Override
     public void run() {
-        System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
+        env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
 
         //intilaize the dealer thread:
         mThread = Thread.currentThread();
@@ -138,7 +138,7 @@ public class Dealer implements Runnable {
             }
         }
 
-        System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
+        env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
     }
 
 
@@ -355,7 +355,7 @@ public class Dealer implements Runnable {
     /**
      * Reset and/or update the countdown and the countdown display.
      */
-    private void updateTimerDisplay(boolean reset) {
+    protected void updateTimerDisplay(boolean reset) {
 
         if(terminate)
             return;

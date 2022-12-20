@@ -168,7 +168,7 @@ public class Table {
     public boolean removeToken(int player, int slot) {
         // implement
         env.ui.removeToken(player, slot);
-        return false;
+        return true;
     }
 
     /**
@@ -188,6 +188,10 @@ public class Table {
 
     /**
      * Checks if the card as the player picked it is still relavant and hasn't changed cause of the dealer actions
+     * @param card   - the card we check
+     * @param slot   - the slot we check
+     * @return       - true if the combination is still relavant
+     *               - false if the combination is not relavant
      */
     public boolean isRelevant(Integer card, int slot){
         if (card == null)

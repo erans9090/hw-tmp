@@ -134,7 +134,7 @@ public class Player implements Runnable {
     public void run() {
 
         playerThread = Thread.currentThread();
-        System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
+        env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
         
         // deals threads order  -> 
         synchronized(table.lock){
@@ -171,7 +171,7 @@ public class Player implements Runnable {
         }
         // <-
 
-        System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
+        env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
     }
 
     /**
@@ -280,8 +280,7 @@ public class Player implements Runnable {
         aiThread = new Thread(() -> {
             
             //ARTIFICAL INTELLEGENCE:
-
-            System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
+            env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
             
             synchronized(table.lock){
                 table.lock.notifyAll();
@@ -379,7 +378,7 @@ public class Player implements Runnable {
                     System.out.println("AI " + id + " is STOP waiting"); 
                 }
             }
-            System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
+            env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
         }, "computer-" + id);
         aiThread.start();
     }
@@ -483,7 +482,8 @@ public class Player implements Runnable {
     }
 
     /*
-     * empty the hash hash set and clear the incoming actions
+     * empty the hash set and clear the incoming actions
+     * post - the player's hash set and the incoming actions are empty
      */
     public void emptyHashSet(){ // CRITICAL SECTION dealer has the key therefore it is synchronized
         incomingActions.clear();

@@ -62,6 +62,13 @@ class TableTest {
         assertEquals(2, (int) cardToSlot[8]);
     }
 
+    private void placeSomeCardsAndAssert(int card, int slot) {
+        table.placeCard(card, slot);
+
+        assertEquals(card, (int) slotToCard[slot]);
+        assertEquals(slot, (int) cardToSlot[card]);
+    }
+
     @Test
     void countCards_NoSlotsAreFilled() {
 
@@ -147,4 +154,39 @@ class TableTest {
             super("", null);
         }
     }
+
+
+    @Test
+    void isRelevantTest(){
+        
+        // insert dummy vlue into the table
+        int card = 8;
+        int slot = 2;
+        table.placeCard(card, slot);
+
+        // check if a card is still relavnt before any change:
+        assertEquals(true, table.isRelevant(card, slot));
+
+        //simulate a change of the card to null value like happens when other player finds a set
+        int newCard = 7;
+        table.removeCard(slot);
+        table.placeCard(newCard, slot);
+
+        // check if a card is still relavnt after the change:
+        assertEquals(false, table.isRelevant(card, slot));
+
+    }
+
+    // @Test
+    // void removeToken(){
+
+
+    //     assertEquals(true, table.removeToken(card, slot));
+
+    //     verify(ui).setCountdown(eq(expectedTimer + 999), eq(false));
+
+    // }
+
+
+
 }

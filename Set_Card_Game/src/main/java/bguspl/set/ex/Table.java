@@ -125,6 +125,7 @@ public class Table {
     /**
      * Removes a card from a grid slot on the table.
      * @param slot - the slot from which to remove the card.
+     * @post cardToSlot[slotToCard[slot]] = null and slotToCard[slot] = null
      */
     public void removeCard(int slot) {
         try {
@@ -155,7 +156,6 @@ public class Table {
      */
     public void placeToken(int player, int slot) {
 
-        //implement
         env.ui.placeToken(player, slot);
     }
 

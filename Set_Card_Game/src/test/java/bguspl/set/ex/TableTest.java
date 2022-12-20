@@ -6,10 +6,14 @@ import bguspl.set.UserInterface;
 import bguspl.set.Util;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
+
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -18,6 +22,14 @@ class TableTest {
     Table table;
     private Integer[] slotToCard;
     private Integer[] cardToSlot;
+    @Mock
+    Util util;
+    @Mock
+    private UserInterface ui;
+    @Mock
+    private Logger logger;
+    @Mock
+    private Config config;
 
     @BeforeEach
     void setUp() {
@@ -30,12 +42,14 @@ class TableTest {
         properties.put("TableDelaySeconds", "0");
         properties.put("PlayerKeys1", "81,87,69,82");
         properties.put("PlayerKeys2", "85,73,79,80");
-        MockLogger logger = new MockLogger();
-        Config config = new Config(logger, properties);
-        slotToCard = new Integer[config.tableSize];
-        cardToSlot = new Integer[config.deckSize];
+        properties.put("HumanPlayers", "1");
 
-        Env env = new Env(logger, config, new MockUserInterface(), new MockUtil());
+        logger = new MockLogger();
+        ui = new MockUserInterface();
+        config = new Config(logger, properties);
+        Env env = new Env(logger, config, ui, util);
+        slotToCard = new Integer[env.config.tableSize];
+        cardToSlot = new Integer[env.config.deckSize];
         table = new Table(env, slotToCard, cardToSlot);
     }
 
@@ -60,13 +74,6 @@ class TableTest {
 
         assertEquals(8, (int) slotToCard[2]);
         assertEquals(2, (int) cardToSlot[8]);
-    }
-
-    private void placeSomeCardsAndAssert(int card, int slot) {
-        table.placeCard(card, slot);
-
-        assertEquals(card, (int) slotToCard[slot]);
-        assertEquals(slot, (int) cardToSlot[card]);
     }
 
     @Test
@@ -177,16 +184,20 @@ class TableTest {
 
     }
 
-    // @Test
-    // void removeToken(){
+    @Test
+    void removeCardTest(){
+        // insert dummy vlue into the table
+        int card = 8;
+        int slot = 2;
+        table.placeCard(card, slot);
 
+        // call the function
+        table.removeCard(slot);
 
-    //     assertEquals(true, table.removeToken(card, slot));
+        // check if removed the card correctly
+        assertEquals(null, cardToSlot[card]);
+        assertEquals(null, slotToCard[slot]);
 
-    //     verify(ui).setCountdown(eq(expectedTimer + 999), eq(false));
-
-    // }
-
-
+    }
 
 }

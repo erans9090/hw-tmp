@@ -51,7 +51,7 @@ class DealerTest {
 
         withReset();
         withoutReset();
-        withWorning();
+        // withWorning();
 
         // verify(ui).setCountdown(eq(expectedTimer), eq(expectedScore));
     }
@@ -87,16 +87,16 @@ class DealerTest {
 
     }
 
-    @Test
-    void withWorning(){
+    // @Test
+    // void withWorning(){
 
-        long expectedTimer = dealer.env.config.turnTimeoutMillis;
+    //     long expectedTimer = dealer.env.config.turnTimeoutMillis;
 
-        dealer.updateTimerDisplay(false);
+    //     dealer.updateTimerDisplay(false);
 
-        verify(ui).setCountdown(eq(expectedTimer + 999), eq(false));
+    //     verify(ui).setCountdown(eq(expectedTimer + 999), eq(false));
 
-    }
+    // }
 
 
 }

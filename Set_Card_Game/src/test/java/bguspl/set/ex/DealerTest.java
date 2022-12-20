@@ -4,18 +4,19 @@ import bguspl.set.Config;
 import bguspl.set.Env;
 import bguspl.set.UserInterface;
 import bguspl.set.Util;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Queue;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
@@ -28,7 +29,9 @@ class DealerTest {
     Util util;
     @Mock
     private UserInterface ui;
-    @Mock
+
+    private Integer[] slotToCard;
+    private Integer[] cardToSlot;
     private Table table;
     @Mock
     private Logger logger;
@@ -36,25 +39,22 @@ class DealerTest {
     @BeforeEach
     void setUp() {
         // purposely do not find the configuration files (use defaults here).
+        
         Env env = new Env(logger, new Config(logger, "config.properties"), ui, util);
+        slotToCard = new Integer[env.config.tableSize];
+        cardToSlot = new Integer[env.config.deckSize];
+        table = new Table(env, slotToCard, cardToSlot);
         Player[] players = {};
         dealer = new Dealer(env, table, players);
 
+        dealer.placeCardsOnTable();
+
+
+
+
     }
 
-    // @AfterEach
-    // void tearDown() {
-    // }
-
-    @Test
-    void updateTimerDisplayTest(){
-
-        withReset();
-        withoutReset();
-        // withWorning();
-
-        // verify(ui).setCountdown(eq(expectedTimer), eq(expectedScore));
-    }
+    // --- updateTimerDisplay test --- //
 
     @Test
     void withReset(){
@@ -63,13 +63,15 @@ class DealerTest {
 
         dealer.updateTimerDisplay(true);
 
+//      +999 so the display would show the current timer for a whole second
+//      otherwise after 1 milis the timer could be upadated
         verify(ui).setCountdown(eq(expectedTimer + 999), eq(false));
 
     }
 
     // set timer like the game started a second ago
-    private void TimerInit(){
-        dealer.startTime = System.currentTimeMillis()-1000;
+    private void TimerInit(long time){
+        dealer.startTime = time;
 
     }
     
@@ -77,26 +79,70 @@ class DealerTest {
     @Test
     void withoutReset(){
 
-        TimerInit();
+        TimerInit(System.currentTimeMillis()-1000);
 
         long expectedTimer = dealer.env.config.turnTimeoutMillis - 1000;
 
         dealer.updateTimerDisplay(false);
 
+//      +999 so the display would show the current timer for a whole second
+//      otherwise after 1 milis the timer could be upadated
         verify(ui).setCountdown(eq(expectedTimer + 999), eq(false));
 
     }
 
-    // @Test
-    // void withWorning(){
+    @Test
+    void withWorning(){
 
-    //     long expectedTimer = dealer.env.config.turnTimeoutMillis;
+        // initial the time like it started before dealer.env.config.turnTimeoutMillis + dealer.env.config.turnTimeoutWarningMillis - 1000milis
+        // meaning we are at the warning time
 
-    //     dealer.updateTimerDisplay(false);
+        TimerInit(System.currentTimeMillis() - dealer.env.config.turnTimeoutMillis + dealer.env.config.turnTimeoutWarningMillis - 1000);
 
-    //     verify(ui).setCountdown(eq(expectedTimer + 999), eq(false));
+        long expectedTimer = dealer.env.config.turnTimeoutWarningMillis - 1000;
 
-    // }
+        dealer.updateTimerDisplay(false);
 
+//      +10 becouse in the warning time the clock updates every 10 millis
+        verify(ui).setCountdown(eq(expectedTimer + 10), eq(true));
+
+    }
+    
+
+    // --- removeAllCardsFromTable test --- //
+
+    @Test
+    void removeAllCardsFromTableTest(){
+
+        
+        dealer.removeAllCardsFromTable();
+        
+        // make sure the table is empty
+        for(int i = 0; i < table.slotToCard.length ; i ++){
+            assertEquals(null, table.slotToCard[i]);
+        }
+        for(int i = 0; i < table.cardToSlot.length ; i ++){
+            assertEquals(null, table.cardToSlot[i]);
+        }
+
+        // thevexpected deck is a full deck of cards - a sorted list from 0 to 80
+        List<Integer> expectedDeck = IntStream.range(0, dealer.env.config.deckSize).boxed().collect(Collectors.toList());
+        
+        // cards can return to the deck in a different order therefore a sort need to be done
+        // to check if the expected and the real has the same cards
+        Collections.sort(dealer.deck);
+        // make sure all cards returned to the deck
+        assertEquals(expectedDeck, dealer.deck);
+
+
+        // make sure ui removed all cards from the table
+        // for (int i = 0; i < table.cardToSlot.length; i++) {
+        for (int i = 0; i < dealer.env.config.tableSize; i++) {
+            System.out.println(i);
+            verify(ui).removeCard(eq(i));
+        }
+
+    }
+    
 
 }

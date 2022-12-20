@@ -35,7 +35,7 @@ public class Dealer implements Runnable {
     /**
      * The list of card ids that are left in the dealer's deck.
      */
-    private final List<Integer> deck;
+    protected final List<Integer> deck;
     
 
     /**
@@ -46,7 +46,6 @@ public class Dealer implements Runnable {
     /**
      * The time of the loop between dealer needs to reshuffle the deck.
      */
-    // private long loopTime;
 
     /**
      * should the warn on the timer be turned on
@@ -301,7 +300,7 @@ public class Dealer implements Runnable {
     /**
      * Check if any cards can be removed from the deck and placed on the table.
      */
-    private void placeCardsOnTable() {
+    protected void placeCardsOnTable() {
         if(terminate)
             return;
             
@@ -381,7 +380,7 @@ public class Dealer implements Runnable {
     /**
      * Returns all the cards from the table to the deck.
      */
-    private void removeAllCardsFromTable() {
+    protected void removeAllCardsFromTable() {
         table.tableIsReady = false;
         env.ui.setCountdown(0, true);
 

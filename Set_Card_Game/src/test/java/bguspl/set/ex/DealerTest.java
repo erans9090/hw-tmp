@@ -136,9 +136,7 @@ class DealerTest {
 
 
         // make sure ui removed all cards from the table
-        // for (int i = 0; i < table.cardToSlot.length; i++) {
         for (int i = 0; i < dealer.env.config.tableSize; i++) {
-            System.out.println(i);
             verify(ui).removeCard(eq(i));
         }
 

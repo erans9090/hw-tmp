@@ -241,12 +241,6 @@ public class Player implements Runnable {
 
                     table.setsToCheckQueue.add(id);
                     
-                    System.out.println("player " + id + " interapted the sweet dealer sleep and now dealers queue: ");
-                    // System.out.println("<- THE QUEUE IS ->");
-                    // for (Integer pId : table.setsToCheckQueue) {
-                    //     System.out.println(pId);
-            
-                    // }
                     dealer.getThread().interrupt();
                     table.lockDealerQueue.release();
                     catchDealerQueue = true;
@@ -266,9 +260,9 @@ public class Player implements Runnable {
         
         if(!human && startAgainTheLoop)
             aiThread.interrupt();
-        try{System.out.println("player " + id + " is waiting"); 
+        try{
             Thread.sleep(env.config.turnTimeoutMillis);}
-        catch(InterruptedException ex){System.out.println("player " + id + " is STOP waiting"); }
+        catch(InterruptedException ex){}
     }
 
     /**
@@ -371,11 +365,10 @@ public class Player implements Runnable {
                 
                 //wait untill next key press needed:
                 synchronized(aiThread){
-                    try{System.out.println("AI " + id + " is waiting"); 
+                    try{
                         aiThread.wait(); }
                     catch( InterruptedException ex ){
                     }
-                    System.out.println("AI " + id + " is STOP waiting"); 
                 }
             }
             env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
@@ -390,7 +383,8 @@ public class Player implements Runnable {
      */
     public void terminate() {
         terminate = true;
-        aiThread.interrupt();
+        if(!human)
+            aiThread.interrupt();
     }
 
     
@@ -410,7 +404,6 @@ public class Player implements Runnable {
         //      - if player queue is full
         if(frozenTimer > 0 || table.slotToCard[slot] == null || incomingActions.size() >= 3){
             startAgainTheLoop = true;
-            System.out.println("key pressed for player " + id + " with slot " + slot + " but FORZEN OR OTHER");
             return;
 
         }
@@ -423,7 +416,6 @@ public class Player implements Runnable {
                 incomingActions.add(tmp);
                 synchronized(playerThread){
                 playerThread.interrupt();}
-                System.out.println("key pressed and player interapter for player " + id + " with slot " + slot + " AND ADDED");
             }
 
                         

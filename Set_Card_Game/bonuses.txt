@@ -12,13 +12,14 @@ with a short description of:
 
 1. Fully supporting all configuration fields and avoiding the use of magic numbers
 
-We are not entitled to this bonus.
+Instead of using magic numbers, we called to the numbers from config.
 
 --------------------
 
 2. Terminating all threads (that you created) gracefully and in reverse order to the order they were created in.
 
-We are not entitled to this bonus.
+Each thread is waiting for the others to finnish, and just then terminate.
+The threads are waiting in the opposite order of the creation.
 
 --------------------
 
@@ -35,4 +36,6 @@ We are not entitled to this bonus.
 changed on the display, key input needs to be handled, etc.) and the only threads created by you are:
 1 thread per player + 1 additional thread for non-human players.
 
-We are not entitled to this bonus.
+All the threads are going to sleep or wait if not needed.
+They are coming back to work only if needed, when other thread interapt them.
+In addition, the dealer thread is updating the timer.

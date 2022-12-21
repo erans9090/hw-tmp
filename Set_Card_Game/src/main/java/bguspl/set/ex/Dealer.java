@@ -10,12 +10,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 
-enum GameMode{
-    NO_TIMER,
-    LAST_ACTION_TIMER,
-    REGULAR
-}
-
 /**
  * This class manages the dealer's threads and data
  */
@@ -192,12 +186,6 @@ public class Dealer implements Runnable {
         // CRITICAL SECTION dealer should not be interupted
         //  until a set is found or the queue is empty
 
-        // System.out.println("<- THE QUEUE IS ->");
-        // for (Integer pId : table.setsToCheckQueue) {
-        //     System.out.println(pId);
-            
-        // }
-
         try{
             if(terminate)
                 return;
@@ -205,11 +193,8 @@ public class Dealer implements Runnable {
             table.lockDealerQueue.acquire();
             while(!table.setsToCheckQueue.isEmpty())
             {
-                System.out.println(table.setsToCheckQueue.peek());
                 int pId = table.setsToCheckQueue.poll();
                 synchronized(players[pId].actionsLocker){
-
-                    System.out.println("dealer checks player " +pId+ " with the set" + players[pId].printSetToCheck());
 
                     //if set to check size smaller then 3 empty it:
                     //happens when other player got a point and the card removed
@@ -279,13 +264,9 @@ public class Dealer implements Runnable {
                             }
                             players[pId].emptyHashSet();
 
-                            System.out.println("dealer POINT player " +pId+ " and now set" + players[pId].printSetToCheck());
-
                         } 
                         else{ //panelty:
                             players[pId].panelty();
-
-                            System.out.println("dealer PANELTY player " +pId+ " and now set" + players[pId].printSetToCheck());
 
                         }
                     }

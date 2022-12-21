@@ -111,6 +111,8 @@ class TableTest {
         @Override
         public void placeCard(int card, int slot) {}
         @Override
+        public void dispose() {}
+        @Override
         public void removeCard(int slot) {}
         @Override
         public void setCountdown(long millies, boolean warn) {}
@@ -152,6 +154,8 @@ class TableTest {
         public List<int[]> findSets(List<Integer> deck, int count) {
             return null;
         }
+        @Override
+        public void spin(){}
     }
 
     static class MockLogger extends Logger {

@@ -264,7 +264,7 @@ public class Player implements Runnable {
         if(terminate)
             return;
         
-        if(startAgainTheLoop)
+        if(!human && startAgainTheLoop)
             aiThread.interrupt();
         try{System.out.println("player " + id + " is waiting"); 
             Thread.sleep(env.config.turnTimeoutMillis);}
